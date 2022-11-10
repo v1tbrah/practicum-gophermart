@@ -37,7 +37,7 @@ func TestAPI_signUpHandler(t *testing.T) {
 					Once()
 				return &testApp
 			}(),
-			expectedCode: http.StatusCreated,
+			expectedCode: http.StatusOK,
 		},
 		{
 			name:    "login already exists",

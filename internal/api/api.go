@@ -55,7 +55,7 @@ func (a *API) Run() error {
 	errG.Go(a.startListener)
 
 	if err := errG.Wait(); err != nil {
-		if errCloser := a.app.CloseStorage(); err != nil {
+		if errCloser := a.app.CloseStorage(); errCloser != nil {
 			return errCloser
 		}
 		return err

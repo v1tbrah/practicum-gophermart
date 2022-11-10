@@ -57,7 +57,7 @@ func (a *API) signUpHandler(c *gin.Context) {
 	c.Header("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	c.SetCookie("refreshToken", newRefreshSession.Token, int(newRefreshSession.ExpiresIn), "/api", "", true, true)
 
-	a.respond(c, http.StatusCreated, map[string]string{"accessToken": accessToken, "refreshToken": newRefreshSession.Token})
+	a.respond(c, http.StatusOK, map[string]string{"accessToken": accessToken, "refreshToken": newRefreshSession.Token})
 }
 
 func (a *API) checkAuthMiddleware(c *gin.Context) {
