@@ -4,13 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"net/http/httptest"
+
 	"practicum-gophermart/internal/model"
 	dberr "practicum-gophermart/internal/storage/errors"
-	"testing"
 )
 
 func TestPg_UpdateRefreshSession(t *testing.T) {
@@ -178,7 +180,7 @@ func TestPg_GetRefreshSessionByToken(t *testing.T) {
 				UserID:    1,
 				ExpiresIn: 2,
 			},
-			err:     dberr.RefreshSessionIsNotExists,
+			err:     dberr.ErrRefreshSessionIsNotExists,
 			wantErr: true,
 		},
 		{

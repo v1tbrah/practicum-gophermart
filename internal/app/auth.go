@@ -3,9 +3,11 @@ package app
 import (
 	"errors"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
+
 	"practicum-gophermart/internal/model"
 	dberr "practicum-gophermart/internal/storage/errors"
 )
@@ -101,7 +103,7 @@ func (a *app) NewRefreshSession(c *gin.Context, newRefreshSession *model.Refresh
 func (a *app) GetRefreshSessionByToken(c *gin.Context, refreshToken string) (*model.RefreshSession, error) {
 	refreshSession, err := a.storage.GetRefreshSessionByToken(c, refreshToken)
 	if err != nil {
-		if errors.Is(err, dberr.RefreshSessionIsNotExists) {
+		if errors.Is(err, dberr.ErrRefreshSessionIsNotExists) {
 			return nil, ErrRefreshSessionIsNotExist
 		}
 		return nil, err

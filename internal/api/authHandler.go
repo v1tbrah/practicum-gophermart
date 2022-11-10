@@ -68,18 +68,18 @@ func (a *API) checkAuthMiddleware(c *gin.Context) {
 
 			refreshToken, err := c.Cookie("refreshToken")
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]any{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
 				return
 			}
 
 			refreshSession, err := a.app.GetRefreshSessionByToken(c, refreshToken)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]any{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
 				return
 			}
 
 			if refreshTokenIsExpired := refreshSession.ExpiresIn < time.Now().Unix(); refreshTokenIsExpired {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]any{
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
 					"access token error":  ErrAccessTokenIsExpired.Error(),
 					"refresh token error": ErrRefreshTokenIsExpired.Error(),
 				})
@@ -88,14 +88,14 @@ func (a *API) checkAuthMiddleware(c *gin.Context) {
 
 			newAccessToken, newRefreshToken, newRefreshExpiresIn, err := a.authMngr.newAccessAndRefreshTokens(refreshSession.UserID)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]any{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
 				return
 			}
 
 			newRefreshSession := model.RefreshSession{UserID: refreshSession.UserID, Token: newRefreshToken, ExpiresIn: newRefreshExpiresIn}
 			err = a.app.NewRefreshSession(c, &newRefreshSession)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]any{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
 				return
 			}
 

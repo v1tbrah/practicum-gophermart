@@ -8,5 +8,5 @@ var (
 )
 
 var (
-	RefreshSessionIsNotExists = errors.New("refresh session is not exists")
+	ErrRefreshSessionIsNotExists = errors.New("refresh session is not exists")
 )

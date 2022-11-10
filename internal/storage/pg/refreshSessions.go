@@ -99,7 +99,7 @@ func (p *Pg) GetRefreshSessionByToken(c *gin.Context, token string) (*model.Refr
 	err = p.refreshSessionStmts.stmtGetRefreshSessionByToken.QueryRowContext(c, token).Scan(&refreshSession.UserID, &refreshSession.ExpiresIn)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf(`pg: %w: %s`, dberr.RefreshSessionIsNotExists, err)
+			return nil, fmt.Errorf(`pg: %w: %s`, dberr.ErrRefreshSessionIsNotExists, err)
 		}
 		return nil, err
 	}
