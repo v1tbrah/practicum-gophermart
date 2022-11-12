@@ -15,6 +15,7 @@ var ErrDBIsNilPointer = errors.New("database is nil pointer")
 type Pg struct {
 	db                  *sql.DB
 	usersStmts          *usersStmts
+	ordersStmts         *ordersStmts
 	refreshSessionStmts *refreshSessionStmts
 }
 
@@ -53,6 +54,10 @@ func New(pgConn string) (*Pg, error) {
 	}
 
 	if err = prepareRefreshSessionStmts(ctx, &newPg); err != nil {
+		return nil, err
+	}
+
+	if err = prepareOrdersStmts(ctx, &newPg); err != nil {
 		return nil, err
 	}
 

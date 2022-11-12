@@ -89,6 +89,12 @@ func (a *API) newRouter() *gin.Engine {
 			auth.POST("login", a.signInHandler)
 		}
 
+		orders := user.Group("/").Use(a.checkAuthMiddleware)
+		{
+			orders.POST("orders", a.setOrderHandler)
+			orders.GET("orders", a.ordersHandler)
+		}
+
 	}
 
 	return r

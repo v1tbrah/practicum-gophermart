@@ -17,6 +17,20 @@ type Application struct {
 	mock.Mock
 }
 
+// AddOrder provides a mock function with given fields: c, order
+func (_m *Application) AddOrder(c *gin.Context, order *model.Order) error {
+	ret := _m.Called(c, order)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*gin.Context, *model.Order) error); ok {
+		r0 = rf(c, order)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CloseStorage provides a mock function with given fields:
 func (_m *Application) CloseStorage() error {
 	ret := _m.Called()
@@ -61,6 +75,29 @@ func (_m *Application) CreateUser(c *gin.Context, user *model.User) (int64, erro
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*gin.Context, *model.User) error); ok {
 		r1 = rf(c, user)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOrdersByUser provides a mock function with given fields: c, userID
+func (_m *Application) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error) {
+	ret := _m.Called(c, userID)
+
+	var r0 []model.Order
+	if rf, ok := ret.Get(0).(func(*gin.Context, int64) []model.Order); ok {
+		r0 = rf(c, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Order)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*gin.Context, int64) error); ok {
+		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
