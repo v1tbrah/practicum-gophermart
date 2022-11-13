@@ -56,3 +56,39 @@ func (a *app) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, erro
 	}
 	return orders, nil
 }
+
+func (a *app) GetOrderNumbersByStatuses(statuses []string) ([]string, error) {
+	log.Debug().Msg("app.GetOrderNumbersByStatuses START")
+	var err error
+	defer func() {
+		if err != nil {
+			log.Error().Err(err).Msg("app.GetOrderNumbersByStatuses END")
+		} else {
+			log.Debug().Msg("app.GetOrderNumbersByStatuses END")
+		}
+	}()
+
+	orderNumbers, err := a.storage.GetOrderNumbersByStatuses(statuses)
+	if err != nil {
+		return nil, err
+	}
+
+	return orderNumbers, nil
+}
+
+func (a *app) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
+	log.Debug().Msg("app.UpdateOrderStatuses START")
+	var err error
+	defer func() {
+		if err != nil {
+			log.Error().Err(err).Msg("app.UpdateOrderStatuses END")
+		} else {
+			log.Debug().Msg("app.UpdateOrderStatuses END")
+		}
+	}()
+	if err = a.storage.UpdateOrderStatuses(newOrderStatuses); err != nil {
+		return err
+	}
+
+	return nil
+}

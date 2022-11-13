@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"practicum-gophermart/internal/config"
@@ -47,9 +48,6 @@ func New(storage storage.Storage, cfg *config.Config) (*app, error) {
 		cfg:     cfg,
 		pwdMngr: newPwdMngr(bcrypt.DefaultCost),
 	}
-
-	// TODO
-	// go newApp.startUpdatingOrdersStatus()
 
 	return newApp, nil
 }

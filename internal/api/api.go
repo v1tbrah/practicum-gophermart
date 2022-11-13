@@ -5,6 +5,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -12,9 +13,10 @@ import (
 )
 
 type API struct {
-	authMngr *authMngr
-	app      Application
-	serv     *http.Server
+	authMngr    *authMngr
+	app         Application
+	serv        *http.Server
+	accrualMngr *accrualMngr
 }
 
 // New returns new API.
@@ -40,7 +42,32 @@ func New(application Application) (*API, error) {
 		Handler: newAPI.newRouter(),
 	}
 
+	newAPI.accrualMngr = newAccrualMngr()
+
 	return newAPI, nil
+}
+
+func (a *API) newRouter() *gin.Engine {
+
+	r := gin.Default()
+
+	user := r.Group("/api/user")
+	{
+		auth := user.Group("/")
+		{
+			auth.POST("register", a.signUpHandler)
+			auth.POST("login", a.signInHandler)
+		}
+
+		orders := user.Group("/").Use(a.checkAuthMiddleware)
+		{
+			orders.POST("orders", a.setOrderHandler)
+			orders.GET("orders", a.ordersHandler)
+		}
+
+	}
+
+	return r
 }
 
 // Run API starts the API.
@@ -53,6 +80,8 @@ func (a *API) Run() error {
 	errG, _ := errgroup.WithContext(context.Background())
 
 	errG.Go(a.startListener)
+
+	errG.Go(a.startUpdatingOrdersStatus)
 
 	if err := errG.Wait(); err != nil {
 		if errCloser := a.app.CloseStorage(); errCloser != nil {
@@ -77,25 +106,21 @@ func (a *API) startListener() error {
 	return a.serv.ListenAndServe()
 }
 
-func (a *API) newRouter() *gin.Engine {
-
-	r := gin.Default()
-
-	user := r.Group("/api/user")
-	{
-		auth := user.Group("/")
-		{
-			auth.POST("register", a.signUpHandler)
-			auth.POST("login", a.signInHandler)
-		}
-
-		orders := user.Group("/").Use(a.checkAuthMiddleware)
-		{
-			orders.POST("orders", a.setOrderHandler)
-			orders.GET("orders", a.ordersHandler)
-		}
-
+func (a *API) startUpdatingOrdersStatus() error {
+	interval := a.app.Config().OrderStatusUpdateInterval()
+	if interval == time.Second*0 {
+		return nil
 	}
 
-	return r
+	ticker := time.NewTicker(interval)
+	for {
+		select {
+		case <-ticker.C:
+			err := a.updateOrdersStatus()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 }

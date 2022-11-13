@@ -10,6 +10,7 @@ type Config struct {
 	servAddr                  string
 	pgConnString              string
 	accrualAddr               string
+	accrualGetOrder           string
 	orderStatusUpdateInterval time.Duration
 }
 
@@ -25,7 +26,7 @@ func New(options ...string) (*Config, error) {
 		}
 	}()
 
-	cfg.orderStatusUpdateInterval = time.Second * 1
+	cfg.orderStatusUpdateInterval = time.Second * 5
 
 	for _, opt := range options {
 		switch opt {
@@ -37,6 +38,8 @@ func New(options ...string) (*Config, error) {
 			}
 		}
 	}
+
+	cfg.accrualGetOrder = cfg.accrualAddr + "/api/orders/{number}"
 
 	return cfg, nil
 }
@@ -53,6 +56,10 @@ func (c *Config) AccrualAddr() string {
 	return c.accrualAddr
 }
 
+func (c *Config) AccrualGetOrder() string {
+	return c.accrualGetOrder
+}
+
 func (c *Config) OrderStatusUpdateInterval() time.Duration {
 	return c.orderStatusUpdateInterval
 }
@@ -63,5 +70,6 @@ func (c *Config) String() string {
 	}
 	return "servAddr: " + c.servAddr +
 		" accrualAddr: " + c.accrualAddr +
+		" accrualGetOrder: " + c.accrualGetOrder +
 		" orderStatusUpdateInterval" + c.orderStatusUpdateInterval.String()
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
+	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 
 	"practicum-gophermart/internal/model"
@@ -16,9 +17,11 @@ import (
 )
 
 type ordersStmts struct {
-	stmtAddOrder      *sql.Stmt
-	stmtGetOrder      *sql.Stmt
-	stmtGetUserOrders *sql.Stmt
+	stmtAddOrder                  *sql.Stmt
+	stmtGetOrder                  *sql.Stmt
+	stmtGetUserOrders             *sql.Stmt
+	stmtGetOrderNumbersByStatuses *sql.Stmt
+	stmtUpdateOrderStatus         *sql.Stmt
 }
 
 func prepareOrdersStmts(ctx context.Context, p *Pg) error {
@@ -41,6 +44,18 @@ func prepareOrdersStmts(ctx context.Context, p *Pg) error {
 		return err
 	} else {
 		newOrdersStmts.stmtGetUserOrders = stmtGetUserOrders
+	}
+
+	if stmtGetOrderNumbersByStatuses, err := p.db.PrepareContext(ctx, queryGetOrderNumbersByStatuses); err != nil {
+		return err
+	} else {
+		newOrdersStmts.stmtGetOrderNumbersByStatuses = stmtGetOrderNumbersByStatuses
+	}
+
+	if stmtUpdateOrderStatus, err := p.db.PrepareContext(ctx, queryUpdateOrderStatus); err != nil {
+		return err
+	} else {
+		newOrdersStmts.stmtUpdateOrderStatus = stmtUpdateOrderStatus
 	}
 
 	p.ordersStmts = &newOrdersStmts
@@ -135,4 +150,66 @@ func (p *Pg) GetOrder(c *gin.Context, number string) (*model.Order, error) {
 	}
 
 	return &order, nil
+}
+
+func (p *Pg) GetOrderNumbersByStatuses(statuses []string) ([]string, error) {
+	log.Debug().Msg("Pg.GetOrderNumbersByStatuses START")
+	var err error
+	defer func() {
+		if err != nil {
+			log.Error().Err(err).Msg("Pg.GetOrderNumbersByStatuses END")
+		} else {
+			log.Debug().Msg("Pg.GetOrderNumbersByStatuses END")
+		}
+	}()
+
+	rows, err := p.ordersStmts.stmtGetOrderNumbersByStatuses.Query(pq.Array(statuses))
+	if err != nil {
+		return nil, fmt.Errorf(`pg: %w`, err)
+	}
+	defer rows.Close()
+
+	var orderNumbers []string
+	for rows.Next() {
+		var currNumber string
+		rows.Scan(&currNumber)
+		orderNumbers = append(orderNumbers, currNumber)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf(`pg: %w`, err)
+	}
+
+	return orderNumbers, nil
+}
+
+func (p *Pg) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
+	log.Debug().Msg("Pg.UpdateOrderStatuses START")
+	var err error
+	defer func() {
+		if err != nil {
+			log.Error().Err(err).Msg("Pg.UpdateOrderStatuses END")
+		} else {
+			log.Debug().Msg("Pg.UpdateOrderStatuses END")
+		}
+	}()
+
+	tx, err := p.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for _, order := range newOrderStatuses {
+		if _, err = tx.Stmt(p.ordersStmts.stmtUpdateOrderStatus).Exec(order.Status, order.Accrual, order.Number); err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
