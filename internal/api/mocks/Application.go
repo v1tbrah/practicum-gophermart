@@ -82,6 +82,29 @@ func (_m *Application) CreateUser(c *gin.Context, user *model.User) (int64, erro
 	return r0, r1
 }
 
+// GetOrderNumbersByStatuses provides a mock function with given fields: statuses
+func (_m *Application) GetOrderNumbersByStatuses(statuses []string) ([]string, error) {
+	ret := _m.Called(statuses)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func([]string) []string); ok {
+		r0 = rf(statuses)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]string) error); ok {
+		r1 = rf(statuses)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOrdersByUser provides a mock function with given fields: c, userID
 func (_m *Application) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error) {
 	ret := _m.Called(c, userID)
@@ -158,6 +181,20 @@ func (_m *Application) NewRefreshSession(c *gin.Context, newRefreshSession *mode
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*gin.Context, *model.RefreshSession) error); ok {
 		r0 = rf(c, newRefreshSession)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateOrderStatuses provides a mock function with given fields: newOrderStatuses
+func (_m *Application) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
+	ret := _m.Called(newOrderStatuses)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]model.Order) error); ok {
+		r0 = rf(newOrderStatuses)
 	} else {
 		r0 = ret.Error(0)
 	}
