@@ -48,9 +48,6 @@ func New(storage storage.Storage, cfg *config.Config) (*app, error) {
 		pwdMngr: newPwdMngr(bcrypt.DefaultCost),
 	}
 
-	// TODO
-	// go newApp.startUpdatingOrdersStatus()
-
 	return newApp, nil
 }
 

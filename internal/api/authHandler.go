@@ -60,6 +60,45 @@ func (a *API) signUpHandler(c *gin.Context) {
 	a.respond(c, http.StatusOK, map[string]string{"accessToken": accessToken, "refreshToken": newRefreshSession.Token})
 }
 
+func (a *API) signInHandler(c *gin.Context) {
+	log.Debug().Msg("api.signIn started")
+	defer log.Debug().Msg("api.signIn ended")
+
+	var requestUser model.User
+	if err := c.BindJSON(&requestUser); err != nil {
+		a.error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	user, err := a.app.GetUser(c, requestUser.Login, requestUser.Password)
+	if err != nil {
+		if errors.Is(err, app.ErrInvalidLoginOrPassword) {
+			a.error(c, http.StatusUnauthorized, err)
+		} else {
+			a.error(c, http.StatusBadRequest, err)
+		}
+		return
+	}
+
+	accessToken, refreshToken, refreshExpiresIn, err := a.authMngr.newAccessAndRefreshTokens(user.ID)
+	if err != nil {
+		a.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	newRefreshSession := model.RefreshSession{UserID: user.ID, Token: refreshToken, ExpiresIn: refreshExpiresIn}
+	err = a.app.NewRefreshSession(c, &newRefreshSession)
+	if err != nil {
+		a.error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.Header("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	c.SetCookie("refreshToken", newRefreshSession.Token, int(newRefreshSession.ExpiresIn), "/api", "", true, true)
+
+	a.respond(c, http.StatusOK, map[string]string{"accessToken": accessToken, "refreshToken": newRefreshSession.Token})
+}
+
 func (a *API) checkAuthMiddleware(c *gin.Context) {
 
 	id, err := a.authMngr.getIDFromAuthHeader(c)
