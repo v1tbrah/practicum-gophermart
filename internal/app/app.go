@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-
 	"golang.org/x/crypto/bcrypt"
 
 	"practicum-gophermart/internal/config"
