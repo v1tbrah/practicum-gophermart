@@ -37,7 +37,7 @@ func (a *API) updateOrdersStatus() error {
 	}()
 
 	nonFinalStatuses := []string{model.OrderStatusNew.String(), model.OrderStatusProcessing.String()}
-	numbersOfOrdersWithNonFinalStatuses, err := a.app.GetOrderNumbersByStatuses(nonFinalStatuses)
+	ordersWithNonFinalStatuses, err := a.app.GetOrdersByStatuses(nonFinalStatuses)
 	if err != nil {
 		return err
 	}
@@ -48,10 +48,10 @@ func (a *API) updateOrdersStatus() error {
 		Accrual float64 `json:"accrual"`
 	}
 
-	orderStatusesFromAccrualSystem := make([]model.Order, 0, len(numbersOfOrdersWithNonFinalStatuses))
+	orderStatusesFromAccrualSystem := make([]model.Order, 0, len(ordersWithNonFinalStatuses))
 
-	for _, orderNumber := range numbersOfOrdersWithNonFinalStatuses {
-		resp, err := a.accrualMngr.client.R().SetPathParam("number", orderNumber).Get(a.app.Config().AccrualGetOrder())
+	for _, order := range ordersWithNonFinalStatuses {
+		resp, err := a.accrualMngr.client.R().SetPathParam("number", order.Number).Get(a.app.Config().AccrualGetOrder())
 		if err != nil {
 			return err
 		}
@@ -77,6 +77,7 @@ func (a *API) updateOrdersStatus() error {
 
 		orderStatusesFromAccrualSystem = append(orderStatusesFromAccrualSystem,
 			model.Order{
+				UserID:  order.UserID,
 				Number:  newOrderFromAccrualSystem.Order,
 				Status:  newOrderFromAccrualSystem.Status,
 				Accrual: newOrderFromAccrualSystem.Accrual,

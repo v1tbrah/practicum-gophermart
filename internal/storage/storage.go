@@ -21,7 +21,7 @@ type Storage interface {
 	GetRefreshSessionByToken(c *gin.Context, refreshToken string) (*model.RefreshSession, error)
 	AddOrder(c *gin.Context, order *model.Order) error
 	GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error)
-	GetOrderNumbersByStatuses(statuses []string) ([]string, error)
+	GetOrdersByStatuses(statuses []string) ([]model.Order, error)
 	UpdateOrderStatuses(newOrderStatuses []model.Order) error
 	GetBalance(c *gin.Context, userID int64) (balance float64, withdrawn float64, err error)
 	AddWithdrawal(c *gin.Context, userID int64, withdraw model.Withdraw) error

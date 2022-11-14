@@ -15,6 +15,6 @@ GROUP BY
 	balance.user_id
 `
 
-const queryIncreaseBalance = `UPDATE balance SET sum = sum + $2 WHERE user_id=$1 RETURNING sum`
+const queryIncreaseBalance = `UPDATE balance SET sum = sum + $2 WHERE user_id=$1`
 
 const queryReduceBalance = `UPDATE balance SET sum = sum - $2 WHERE user_id=$1 RETURNING sum`

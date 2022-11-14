@@ -18,7 +18,7 @@ func (w Withdraw) MarshalJSON() ([]byte, error) {
 	log.Debug().Msg("w.MarshalJSON START")
 	defer log.Debug().Msg("w.MarshalJSON END")
 
-	var strJsonWithdraw strings.Builder
-	strJsonWithdraw.WriteString("{\"order\": \"" + w.Order + "\", \"sum\": " + fmt.Sprint(w.Sum) + ", \"processed_at\": \"" + w.ProcessedAt.Format(time.RFC3339) + "\"}")
-	return []byte(strJsonWithdraw.String()), nil
+	var strJSONWithdraw strings.Builder
+	strJSONWithdraw.WriteString("{\"order\": \"" + w.Order + "\", \"sum\": " + fmt.Sprint(w.Sum) + ", \"processed_at\": \"" + w.ProcessedAt.Format(time.RFC3339) + "\"}")
+	return []byte(strJSONWithdraw.String()), nil
 }

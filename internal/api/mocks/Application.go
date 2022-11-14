@@ -110,16 +110,16 @@ func (_m *Application) GetBalance(c *gin.Context, userID int64) (float64, float6
 	return r0, r1, r2
 }
 
-// GetOrderNumbersByStatuses provides a mock function with given fields: statuses
-func (_m *Application) GetOrderNumbersByStatuses(statuses []string) ([]string, error) {
+// GetOrdersByStatuses provides a mock function with given fields: statuses
+func (_m *Application) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
 	ret := _m.Called(statuses)
 
-	var r0 []string
-	if rf, ok := ret.Get(0).(func([]string) []string); ok {
+	var r0 []model.Order
+	if rf, ok := ret.Get(0).(func([]string) []model.Order); ok {
 		r0 = rf(statuses)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
+			r0 = ret.Get(0).([]model.Order)
 		}
 	}
 
