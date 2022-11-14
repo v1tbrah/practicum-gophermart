@@ -17,6 +17,8 @@ type Pg struct {
 	usersStmts          *usersStmts
 	ordersStmts         *ordersStmts
 	refreshSessionStmts *refreshSessionStmts
+	balanceStmts        *balanceStmts
+	withdrawalsStmts    *withdrawalsStmts
 }
 
 func New(pgConn string) (*Pg, error) {
@@ -58,6 +60,14 @@ func New(pgConn string) (*Pg, error) {
 	}
 
 	if err = prepareOrdersStmts(ctx, &newPg); err != nil {
+		return nil, err
+	}
+
+	if err = prepareBalanceStmts(ctx, &newPg); err != nil {
+		return nil, err
+	}
+
+	if err = prepareWithdrawalsStmts(ctx, &newPg); err != nil {
 		return nil, err
 	}
 

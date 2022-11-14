@@ -57,23 +57,23 @@ func (a *app) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, erro
 	return orders, nil
 }
 
-func (a *app) GetOrderNumbersByStatuses(statuses []string) ([]string, error) {
-	log.Debug().Msg("app.GetOrderNumbersByStatuses START")
+func (a *app) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
+	log.Debug().Msg("app.GetOrdersByStatuses START")
 	var err error
 	defer func() {
 		if err != nil {
-			log.Error().Err(err).Msg("app.GetOrderNumbersByStatuses END")
+			log.Error().Err(err).Msg("app.GetOrdersByStatuses END")
 		} else {
-			log.Debug().Msg("app.GetOrderNumbersByStatuses END")
+			log.Debug().Msg("app.GetOrdersByStatuses END")
 		}
 	}()
 
-	orderNumbers, err := a.storage.GetOrderNumbersByStatuses(statuses)
+	orders, err := a.storage.GetOrdersByStatuses(statuses)
 	if err != nil {
 		return nil, err
 	}
 
-	return orderNumbers, nil
+	return orders, nil
 }
 
 func (a *app) UpdateOrderStatuses(newOrderStatuses []model.Order) error {

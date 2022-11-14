@@ -17,11 +17,11 @@ import (
 )
 
 type ordersStmts struct {
-	stmtAddOrder                  *sql.Stmt
-	stmtGetOrder                  *sql.Stmt
-	stmtGetUserOrders             *sql.Stmt
-	stmtGetOrderNumbersByStatuses *sql.Stmt
-	stmtUpdateOrderStatus         *sql.Stmt
+	stmtAddOrder            *sql.Stmt
+	stmtGetOrder            *sql.Stmt
+	stmtGetUserOrders       *sql.Stmt
+	stmtGetOrdersByStatuses *sql.Stmt
+	stmtUpdateOrderStatus   *sql.Stmt
 }
 
 func prepareOrdersStmts(ctx context.Context, p *Pg) error {
@@ -46,10 +46,10 @@ func prepareOrdersStmts(ctx context.Context, p *Pg) error {
 		newOrdersStmts.stmtGetUserOrders = stmtGetUserOrders
 	}
 
-	if stmtGetOrderNumbersByStatuses, err := p.db.PrepareContext(ctx, queryGetOrderNumbersByStatuses); err != nil {
+	if stmtGetOrdersByStatuses, err := p.db.PrepareContext(ctx, queryGetOrdersByStatuses); err != nil {
 		return err
 	} else {
-		newOrdersStmts.stmtGetOrderNumbersByStatuses = stmtGetOrderNumbersByStatuses
+		newOrdersStmts.stmtGetOrdersByStatuses = stmtGetOrdersByStatuses
 	}
 
 	if stmtUpdateOrderStatus, err := p.db.PrepareContext(ctx, queryUpdateOrderStatus); err != nil {
@@ -152,35 +152,35 @@ func (p *Pg) GetOrder(c *gin.Context, number string) (*model.Order, error) {
 	return &order, nil
 }
 
-func (p *Pg) GetOrderNumbersByStatuses(statuses []string) ([]string, error) {
-	log.Debug().Msg("Pg.GetOrderNumbersByStatuses START")
+func (p *Pg) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
+	log.Debug().Msg("Pg.GetOrdersByStatuses START")
 	var err error
 	defer func() {
 		if err != nil {
-			log.Error().Err(err).Msg("Pg.GetOrderNumbersByStatuses END")
+			log.Error().Err(err).Msg("Pg.GetOrdersByStatuses END")
 		} else {
-			log.Debug().Msg("Pg.GetOrderNumbersByStatuses END")
+			log.Debug().Msg("Pg.GetOrdersByStatuses END")
 		}
 	}()
 
-	rows, err := p.ordersStmts.stmtGetOrderNumbersByStatuses.Query(pq.Array(statuses))
+	rows, err := p.ordersStmts.stmtGetOrdersByStatuses.Query(pq.Array(statuses))
 	if err != nil {
 		return nil, fmt.Errorf(`pg: %w`, err)
 	}
 	defer rows.Close()
 
-	var orderNumbers []string
+	orders := []model.Order{}
 	for rows.Next() {
-		var currNumber string
-		rows.Scan(&currNumber)
-		orderNumbers = append(orderNumbers, currNumber)
+		currOrder := model.Order{}
+		rows.Scan(&currOrder.UserID, &currOrder.Number, &currOrder.Status, &currOrder.Accrual, &currOrder.UploadedAt)
+		orders = append(orders, currOrder)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf(`pg: %w`, err)
 	}
 
-	return orderNumbers, nil
+	return orders, nil
 }
 
 func (p *Pg) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
@@ -202,6 +202,9 @@ func (p *Pg) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
 
 	for _, order := range newOrderStatuses {
 		if _, err = tx.Stmt(p.ordersStmts.stmtUpdateOrderStatus).Exec(order.Status, order.Accrual, order.Number); err != nil {
+			return err
+		}
+		if _, err = tx.Stmt(p.balanceStmts.stmtIncreaseBalance).Exec(order.UserID, order.Accrual); err != nil {
 			return err
 		}
 	}

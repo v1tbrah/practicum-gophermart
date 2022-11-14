@@ -249,7 +249,7 @@ func TestPg_GetOrder(t *testing.T) {
 	}
 }
 
-func TestPg_GetOrderNumbersByStatuses(t *testing.T) {
+func TestPg_GetOrdersByStatuses(t *testing.T) {
 	testPg := Pg{}
 	testPg.ordersStmts = &ordersStmts{}
 
@@ -260,8 +260,8 @@ func TestPg_GetOrderNumbersByStatuses(t *testing.T) {
 	defer db.Close()
 
 	testPg.db = db
-	mock.ExpectPrepare(queryGetOrderNumbersByStatuses)
-	if testPg.ordersStmts.stmtGetOrderNumbersByStatuses, err = testPg.db.PrepareContext(context.Background(), queryGetOrderNumbersByStatuses); err != nil {
+	mock.ExpectPrepare(queryGetOrdersByStatuses)
+	if testPg.ordersStmts.stmtGetOrdersByStatuses, err = testPg.db.PrepareContext(context.Background(), queryGetOrdersByStatuses); err != nil {
 		t.Fatalf("an error '%s' was not expected when preparing create user statement", err)
 	}
 	testPg.db = db
@@ -269,23 +269,41 @@ func TestPg_GetOrderNumbersByStatuses(t *testing.T) {
 	tests := []struct {
 		name         string
 		mockBehavior func()
-		expected     []string
+		expected     []model.Order
 		err          string
 		wantErr      bool
 	}{
 		{
 			name: "OK",
 			mockBehavior: func() {
-				mock.ExpectQuery(queryGetOrderNumbersByStatuses).
+				mock.ExpectQuery(queryGetOrdersByStatuses).
 					WithArgs(pq.Array([]string{"NEW", "PROCESSING"})).
-					WillReturnRows(sqlmock.NewRows([]string{"number"}).AddRow("123").AddRow("321"))
+					WillReturnRows(sqlmock.NewRows([]string{"user_id", "number", "status", "accrual", "uploaded_at"}).
+						AddRow(1, "123", "NEW", 11.1, time.Unix(1, 1)).
+						AddRow(2, "321", "NEW", 22.7, time.Unix(1, 2)))
+
 			},
-			expected: []string{"123", "321"},
+			expected: []model.Order{
+				{
+					UserID:     1,
+					Number:     "123",
+					Status:     "NEW",
+					Accrual:    11.1,
+					UploadedAt: time.Unix(1, 1),
+				},
+				{
+					UserID:     2,
+					Number:     "321",
+					Status:     "NEW",
+					Accrual:    22.7,
+					UploadedAt: time.Unix(1, 2),
+				},
+			},
 		},
 		{
 			name: "unexpected error",
 			mockBehavior: func() {
-				mock.ExpectQuery(queryGetOrderNumbersByStatuses).
+				mock.ExpectQuery(queryGetOrdersByStatuses).
 					WithArgs(pq.Array([]string{"NEW", "PROCESSING"})).
 					WillReturnError(errors.New("unexpected error"))
 			},
@@ -296,7 +314,7 @@ func TestPg_GetOrderNumbersByStatuses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockBehavior()
-			orders, err := testPg.GetOrderNumbersByStatuses([]string{"NEW", "PROCESSING"})
+			orders, err := testPg.GetOrdersByStatuses([]string{"NEW", "PROCESSING"})
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.ErrorContains(t, err, tt.err)
@@ -314,6 +332,7 @@ func TestPg_GetOrderNumbersByStatuses(t *testing.T) {
 func TestPg_UpdateOrderStatuses(t *testing.T) {
 	testPg := Pg{}
 	testPg.ordersStmts = &ordersStmts{}
+	testPg.balanceStmts = &balanceStmts{}
 
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
@@ -324,6 +343,10 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 	testPg.db = db
 	mock.ExpectPrepare(queryUpdateOrderStatus)
 	if testPg.ordersStmts.stmtUpdateOrderStatus, err = testPg.db.PrepareContext(context.Background(), queryUpdateOrderStatus); err != nil {
+		t.Fatalf("an error '%s' was not expected when preparing create user statement", err)
+	}
+	mock.ExpectPrepare(queryIncreaseBalance)
+	if testPg.balanceStmts.stmtIncreaseBalance, err = testPg.db.PrepareContext(context.Background(), queryIncreaseBalance); err != nil {
 		t.Fatalf("an error '%s' was not expected when preparing create user statement", err)
 	}
 	testPg.db = db
@@ -343,6 +366,9 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 				for _, order := range newOrderStatuses {
 					mock.ExpectExec(queryUpdateOrderStatus).
 						WithArgs(order.Status, order.Accrual, order.Number).
+						WillReturnResult(sqlmock.NewResult(0, 0))
+					mock.ExpectExec(queryIncreaseBalance).
+						WithArgs(order.UserID, order.Accrual).
 						WillReturnResult(sqlmock.NewResult(0, 0))
 				}
 				mock.ExpectCommit()
@@ -379,6 +405,9 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 					mock.ExpectExec(queryUpdateOrderStatus).
 						WithArgs(order.Status, order.Accrual, order.Number).
 						WillReturnResult(sqlmock.NewResult(0, 0))
+					mock.ExpectExec(queryIncreaseBalance).
+						WithArgs(order.UserID, order.Accrual).
+						WillReturnResult(sqlmock.NewResult(0, 0))
 				}
 				mock.ExpectCommit()
 			},
@@ -390,16 +419,6 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 			err:     "unexpected error",
 			wantErr: true,
 		},
-		//{
-		//	name: "unexpected error",
-		//	mockBehavior: func() {
-		//		mock.ExpectQuery(queryGetOrderNumbersByStatuses).
-		//			WithArgs(pq.Array([]string{"NEW", "PROCESSING"})).
-		//			WillReturnError(errors.New("unexpected error"))
-		//	},
-		//	err:     "unexpected error",
-		//	wantErr: true,
-		//},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

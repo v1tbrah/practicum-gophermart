@@ -16,3 +16,7 @@ var (
 	ErrOrderWasUploadedByAnotherUser = errors.New("the order was uploaded by another user")
 	ErrOrderIsNotExists              = errors.New("order is not exist")
 )
+
+var (
+	ErrNegativeBalance = errors.New("negative balance")
+)
