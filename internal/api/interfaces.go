@@ -16,6 +16,9 @@ type Application interface {
 	GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error)
 	GetOrderNumbersByStatuses(statuses []string) ([]string, error)
 	UpdateOrderStatuses(newOrderStatuses []model.Order) error
+	GetBalance(c *gin.Context, userID int64) (balance float64, withdrawn float64, err error)
+	WithdrawFromBalance(c *gin.Context, userID int64, withdraw model.Withdraw) error
+	GetWithdrawals(c *gin.Context, userID int64) ([]model.Withdraw, error)
 	Config() *config.Config
 	CloseStorage() error
 }

@@ -204,6 +204,9 @@ func (p *Pg) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
 		if _, err = tx.Stmt(p.ordersStmts.stmtUpdateOrderStatus).Exec(order.Status, order.Accrual, order.Number); err != nil {
 			return err
 		}
+		if _, err = tx.Stmt(p.balanceStmts.stmtIncreaseBalance).Exec(order.UserID, order.Accrual); err != nil {
+			return err
+		}
 	}
 
 	err = tx.Commit()

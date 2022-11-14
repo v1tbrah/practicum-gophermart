@@ -65,6 +65,17 @@ func (a *API) newRouter() *gin.Engine {
 			orders.GET("orders", a.ordersHandler)
 		}
 
+		balance := user.Group("/balance").Use(a.checkAuthMiddleware)
+		{
+			balance.GET("/", a.balanceHandler)
+			balance.POST("/withdraw", a.withdrawPointsHandler)
+		}
+
+		withdraw := user.Group("/").Use(a.checkAuthMiddleware)
+		{
+			withdraw.GET("/withdrawals", a.withdrawnPointsHandler)
+		}
+
 	}
 
 	return r

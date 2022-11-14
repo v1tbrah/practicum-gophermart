@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -15,7 +16,13 @@ type accrualMngr struct {
 }
 
 func newAccrualMngr() *accrualMngr {
-	return &accrualMngr{client: resty.New()}
+	client := resty.New()
+	client.AddRetryCondition(
+		func(r *resty.Response, err error) bool {
+			return r.StatusCode() == http.StatusTooManyRequests
+		},
+	).SetRetryWaitTime(time.Second * 60)
+	return &accrualMngr{client: client}
 }
 
 func (a *API) updateOrdersStatus() error {
@@ -62,6 +69,10 @@ func (a *API) updateOrdersStatus() error {
 
 		if newOrderFromAccrualSystem.Status == "REGISTERED" || newOrderFromAccrualSystem.Status == "PROCESSING" {
 			continue
+		}
+
+		if newOrderFromAccrualSystem.Status == "INVALID" {
+			newOrderFromAccrualSystem.Accrual = 0.0
 		}
 
 		orderStatusesFromAccrualSystem = append(orderStatusesFromAccrualSystem,

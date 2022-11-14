@@ -10,6 +10,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
+
 	"practicum-gophermart/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,7 @@ import (
 func TestPg_AddUser(t *testing.T) {
 	testPg := Pg{}
 	testPg.usersStmts = &usersStmts{}
+	testPg.balanceStmts = &balanceStmts{}
 
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
@@ -33,6 +35,10 @@ func TestPg_AddUser(t *testing.T) {
 	if testPg.usersStmts.stmtAddUser, err = testPg.db.PrepareContext(context.Background(), queryAddUser); err != nil {
 		t.Fatalf("an error '%s' was not expected when preparing create user statement", err)
 	}
+	mock.ExpectPrepare(queryCreateStartingBalance)
+	if testPg.balanceStmts.stmtCreateStartingBalance, err = testPg.db.PrepareContext(context.Background(), queryCreateStartingBalance); err != nil {
+		t.Fatalf("an error '%s' was not expected when preparing create user statement", err)
+	}
 
 	testPg.db = db
 
@@ -41,15 +47,20 @@ func TestPg_AddUser(t *testing.T) {
 		mockBehavior func(*model.User)
 		user         model.User
 		expectedID   int64
-		err          error
+		err          string
 		wantErr      bool
 	}{
 		{
 			name: "OK",
 			mockBehavior: func(user *model.User) {
+				mock.ExpectBegin()
 				mock.ExpectQuery(queryAddUser).
 					WithArgs(user.Login, user.Password).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+				mock.ExpectExec(queryCreateStartingBalance).
+					WithArgs(1).
+					WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectCommit()
 			},
 			user: model.User{
 				Login:    "testLogin",
@@ -58,35 +69,71 @@ func TestPg_AddUser(t *testing.T) {
 			expectedID: 1,
 		},
 		{
+			name: "err on begin tx",
+			mockBehavior: func(user *model.User) {
+				mock.ExpectBegin().WillReturnError(errors.New("unexpected error"))
+			},
+			user: model.User{
+				Login:    "testLogin",
+				Password: "testPassword",
+			},
+			err:     "unexpected error",
+			wantErr: true,
+		},
+		{
 			name: "login already exists",
 			mockBehavior: func(user *model.User) {
+				mock.ExpectBegin()
 				mock.ExpectQuery(queryAddUser).
 					WithArgs(user.Login, user.Password).
 					WillReturnError(&pgconn.PgError{
 						Code:           pgerrcode.UniqueViolation,
 						ConstraintName: "users_login_key"})
+				mock.ExpectRollback()
 			},
 			user: model.User{
 				Login:    "testLogin",
 				Password: "testPassword",
 			},
 			expectedID: 0,
-			err:        dberr.ErrLoginAlreadyExists,
+			err:        dberr.ErrLoginAlreadyExists.Error(),
 			wantErr:    true,
 		},
 		{
-			name: "unexpected err on query",
+			name: "unexpected err on adding user",
 			mockBehavior: func(user *model.User) {
+				mock.ExpectBegin()
 				mock.ExpectQuery(queryAddUser).
 					WithArgs(user.Login, user.Password).
 					WillReturnError(errors.New("unexpected error"))
+				mock.ExpectRollback()
 			},
 			user: model.User{
 				Login:    "testLogin",
 				Password: "testPassword",
 			},
 			expectedID: 0,
-			err:        errors.New("unexpected error"),
+			err:        "unexpected error",
+			wantErr:    true,
+		},
+		{
+			name: "unexpected err on creating starting balance",
+			mockBehavior: func(user *model.User) {
+				mock.ExpectBegin()
+				mock.ExpectQuery(queryAddUser).
+					WithArgs(user.Login, user.Password).
+					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+				mock.ExpectExec(queryCreateStartingBalance).
+					WithArgs(1).
+					WillReturnError(errors.New("unexpected error"))
+				mock.ExpectRollback()
+			},
+			user: model.User{
+				Login:    "testLogin",
+				Password: "testPassword",
+			},
+			expectedID: 0,
+			err:        "unexpected error",
 			wantErr:    true,
 		},
 	}

@@ -314,6 +314,7 @@ func TestPg_GetOrderNumbersByStatuses(t *testing.T) {
 func TestPg_UpdateOrderStatuses(t *testing.T) {
 	testPg := Pg{}
 	testPg.ordersStmts = &ordersStmts{}
+	testPg.balanceStmts = &balanceStmts{}
 
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
@@ -324,6 +325,10 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 	testPg.db = db
 	mock.ExpectPrepare(queryUpdateOrderStatus)
 	if testPg.ordersStmts.stmtUpdateOrderStatus, err = testPg.db.PrepareContext(context.Background(), queryUpdateOrderStatus); err != nil {
+		t.Fatalf("an error '%s' was not expected when preparing create user statement", err)
+	}
+	mock.ExpectPrepare(queryIncreaseBalance)
+	if testPg.balanceStmts.stmtIncreaseBalance, err = testPg.db.PrepareContext(context.Background(), queryIncreaseBalance); err != nil {
 		t.Fatalf("an error '%s' was not expected when preparing create user statement", err)
 	}
 	testPg.db = db
@@ -343,6 +348,9 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 				for _, order := range newOrderStatuses {
 					mock.ExpectExec(queryUpdateOrderStatus).
 						WithArgs(order.Status, order.Accrual, order.Number).
+						WillReturnResult(sqlmock.NewResult(0, 0))
+					mock.ExpectExec(queryIncreaseBalance).
+						WithArgs(order.UserID, order.Accrual).
 						WillReturnResult(sqlmock.NewResult(0, 0))
 				}
 				mock.ExpectCommit()
@@ -379,6 +387,9 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 					mock.ExpectExec(queryUpdateOrderStatus).
 						WithArgs(order.Status, order.Accrual, order.Number).
 						WillReturnResult(sqlmock.NewResult(0, 0))
+					mock.ExpectExec(queryIncreaseBalance).
+						WithArgs(order.UserID, order.Accrual).
+						WillReturnResult(sqlmock.NewResult(0, 0))
 				}
 				mock.ExpectCommit()
 			},
@@ -390,16 +401,6 @@ func TestPg_UpdateOrderStatuses(t *testing.T) {
 			err:     "unexpected error",
 			wantErr: true,
 		},
-		//{
-		//	name: "unexpected error",
-		//	mockBehavior: func() {
-		//		mock.ExpectQuery(queryGetOrderNumbersByStatuses).
-		//			WithArgs(pq.Array([]string{"NEW", "PROCESSING"})).
-		//			WillReturnError(errors.New("unexpected error"))
-		//	},
-		//	err:     "unexpected error",
-		//	wantErr: true,
-		//},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

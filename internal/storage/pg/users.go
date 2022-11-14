@@ -59,14 +59,29 @@ func (p *Pg) AddUser(c *gin.Context, user *model.User) (int64, error) {
 		}
 	}()
 
+	tx, err := p.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
 	var id int64
-	err = p.usersStmts.stmtAddUser.QueryRowContext(c, user.Login, user.Password).Scan(&id)
+	err = tx.StmtContext(c, p.usersStmts.stmtAddUser).QueryRowContext(c, user.Login, user.Password).Scan(&id)
 	if err != nil {
 		if pgError, ok := err.(*pgconn.PgError); ok &&
 			pgError.Code == pgerrcode.UniqueViolation &&
 			pgError.ConstraintName == "users_login_key" {
 			return 0, fmt.Errorf(`pg: %w: %s`, dberr.ErrLoginAlreadyExists, err)
 		}
+		return 0, err
+	}
+
+	_, err = tx.StmtContext(c, p.balanceStmts.stmtCreateStartingBalance).ExecContext(c, id)
+	if err != nil {
+		return 0, err
+	}
+
+	if err = tx.Commit(); err != nil {
 		return 0, err
 	}
 
