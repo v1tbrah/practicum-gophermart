@@ -124,13 +124,12 @@ func (a *API) startUpdatingOrdersStatus() error {
 	}
 
 	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 	for {
-		select {
-		case <-ticker.C:
-			err := a.updateOrdersStatus()
-			if err != nil {
-				return err
-			}
+		<-ticker.C
+		err := a.updateOrdersStatus()
+		if err != nil {
+			return err
 		}
 	}
 
