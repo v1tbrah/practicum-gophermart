@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrAccessTokenIsExpired  = errors.New("access token is expired")
-	ErrRefreshTokenIsExpired = errors.New("refresh token is expired")
+	errAccessTokenIsExpired  = errors.New("access token is expired")
+	errRefreshTokenIsExpired = errors.New("refresh token is expired")
 )
 
 type jwtMngr struct {
@@ -85,7 +85,7 @@ func (j *jwtMngr) getID(accessToken string) (int64, error) {
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return 0, ErrAccessTokenIsExpired
+			return 0, errAccessTokenIsExpired
 		}
 		return 0, err
 	}

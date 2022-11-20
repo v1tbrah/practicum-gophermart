@@ -61,7 +61,7 @@ func (a *API) withdrawPointsHandler(c *gin.Context) {
 		a.error(c, http.StatusUnprocessableEntity, err)
 		return
 	} else if !isValidNumber(int64(numberForCheckValid)) {
-		a.error(c, http.StatusUnprocessableEntity, ErrInvalidOrderNumber)
+		a.error(c, http.StatusUnprocessableEntity, errInvalidOrderNumber)
 		return
 	}
 

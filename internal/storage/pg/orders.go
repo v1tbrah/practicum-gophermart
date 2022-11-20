@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
@@ -28,34 +27,26 @@ func prepareOrdersStmts(ctx context.Context, p *Pg) error {
 
 	newOrdersStmts := ordersStmts{}
 
-	if stmtAddOrder, err := p.db.PrepareContext(ctx, queryAddOrder); err != nil {
+	var err error
+
+	if newOrdersStmts.stmtAddOrder, err = p.db.PrepareContext(ctx, queryAddOrder); err != nil {
 		return err
-	} else {
-		newOrdersStmts.stmtAddOrder = stmtAddOrder
 	}
 
-	if stmtGetOrder, err := p.db.PrepareContext(ctx, queryGetOrder); err != nil {
+	if newOrdersStmts.stmtGetOrder, err = p.db.PrepareContext(ctx, queryGetOrder); err != nil {
 		return err
-	} else {
-		newOrdersStmts.stmtGetOrder = stmtGetOrder
 	}
 
-	if stmtGetUserOrders, err := p.db.PrepareContext(ctx, queryGetOrdersByUser); err != nil {
+	if newOrdersStmts.stmtGetUserOrders, err = p.db.PrepareContext(ctx, queryGetOrdersByUser); err != nil {
 		return err
-	} else {
-		newOrdersStmts.stmtGetUserOrders = stmtGetUserOrders
 	}
 
-	if stmtGetOrdersByStatuses, err := p.db.PrepareContext(ctx, queryGetOrdersByStatuses); err != nil {
+	if newOrdersStmts.stmtGetOrdersByStatuses, err = p.db.PrepareContext(ctx, queryGetOrdersByStatuses); err != nil {
 		return err
-	} else {
-		newOrdersStmts.stmtGetOrdersByStatuses = stmtGetOrdersByStatuses
 	}
 
-	if stmtUpdateOrderStatus, err := p.db.PrepareContext(ctx, queryUpdateOrderStatus); err != nil {
+	if newOrdersStmts.stmtUpdateOrderStatus, err = p.db.PrepareContext(ctx, queryUpdateOrderStatus); err != nil {
 		return err
-	} else {
-		newOrdersStmts.stmtUpdateOrderStatus = stmtUpdateOrderStatus
 	}
 
 	p.ordersStmts = &newOrdersStmts
@@ -63,7 +54,7 @@ func prepareOrdersStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) AddOrder(c *gin.Context, order *model.Order) error {
+func (p *Pg) AddOrder(c context.Context, order *model.Order) error {
 	log.Debug().Msg("Pg.AddOrder START")
 	var err error
 	defer func() {
@@ -96,7 +87,7 @@ func (p *Pg) AddOrder(c *gin.Context, order *model.Order) error {
 	return nil
 }
 
-func (p *Pg) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error) {
+func (p *Pg) GetOrdersByUser(c context.Context, userID int64) ([]model.Order, error) {
 	log.Debug().Msg("Pg.GetOrdersByUser START")
 	var err error
 	defer func() {
@@ -127,7 +118,7 @@ func (p *Pg) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error
 	return orders, nil
 }
 
-func (p *Pg) GetOrder(c *gin.Context, number string) (*model.Order, error) {
+func (p *Pg) GetOrder(c context.Context, number string) (*model.Order, error) {
 	log.Debug().Msg("Pg.GetOrder START")
 	var err error
 	defer func() {

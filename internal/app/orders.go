@@ -1,10 +1,10 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
 	"practicum-gophermart/internal/model"
@@ -16,7 +16,7 @@ var (
 	ErrOrderWasUploadedByAnotherUser = errors.New("the order was uploaded by another user")
 )
 
-func (a *app) AddOrder(c *gin.Context, order *model.Order) error {
+func (a *App) AddOrder(c context.Context, order *model.Order) error {
 	log.Debug().Str("order_number", order.Number).Msg("app.AddOrder START")
 	var err error
 	defer func() {
@@ -39,7 +39,7 @@ func (a *app) AddOrder(c *gin.Context, order *model.Order) error {
 	return nil
 }
 
-func (a *app) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error) {
+func (a *App) GetOrdersByUser(c context.Context, userID int64) ([]model.Order, error) {
 	log.Debug().Str("userID", fmt.Sprint(userID)).Msg("app.GetOrdersByUser START")
 	var err error
 	defer func() {
@@ -57,7 +57,7 @@ func (a *app) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, erro
 	return orders, nil
 }
 
-func (a *app) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
+func (a *App) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
 	log.Debug().Msg("app.GetOrdersByStatuses START")
 	var err error
 	defer func() {
@@ -76,7 +76,7 @@ func (a *app) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
 	return orders, nil
 }
 
-func (a *app) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
+func (a *App) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
 	log.Debug().Msg("app.UpdateOrderStatuses START")
 	var err error
 	defer func() {

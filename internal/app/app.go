@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"practicum-gophermart/internal/config"
@@ -15,14 +16,14 @@ var (
 	ErrEmptyStorage = errors.New("empty storage")
 )
 
-type app struct {
+type App struct {
 	storage storage.Storage
 	cfg     *config.Config
 	pwdMngr *pwdMngr
 }
 
 // New returns new App.
-func New(storage storage.Storage, cfg *config.Config) (*app, error) {
+func New(storage storage.Storage, cfg *config.Config) (*App, error) {
 	log.Debug().Str("cfg", cfg.String()).Msg("app.New started")
 	var err error
 	defer func() {
@@ -42,7 +43,7 @@ func New(storage storage.Storage, cfg *config.Config) (*app, error) {
 		return nil, err
 	}
 
-	newApp := &app{
+	newApp := &App{
 		storage: storage,
 		cfg:     cfg,
 		pwdMngr: newPwdMngr(bcrypt.DefaultCost),
@@ -51,10 +52,10 @@ func New(storage storage.Storage, cfg *config.Config) (*app, error) {
 	return newApp, nil
 }
 
-func (a *app) Config() *config.Config {
+func (a *App) Config() *config.Config {
 	return a.cfg
 }
 
-func (a *app) CloseStorage() error {
+func (a *App) CloseStorage() error {
 	return a.storage.Close()
 }

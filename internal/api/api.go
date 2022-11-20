@@ -4,6 +4,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
+
+var errInvalidIntervalUpdateOrderStatus = errors.New("invalid order status update interval")
 
 type API struct {
 	authMngr    *authMngr
@@ -88,11 +91,15 @@ func (a *API) Run() error {
 
 	log.Info().Msg("api started")
 
-	errG, _ := errgroup.WithContext(context.Background())
+	errG, ctx := errgroup.WithContext(context.Background())
 
-	errG.Go(a.startListener)
+	errG.Go(func() error {
+		return a.startListener(ctx)
+	})
 
-	errG.Go(a.startUpdatingOrdersStatus)
+	errG.Go(func() error {
+		return a.startUpdatingOrdersStatus(ctx)
+	})
 
 	if err := errG.Wait(); err != nil {
 		if errCloser := a.app.CloseStorage(); errCloser != nil {
@@ -109,27 +116,58 @@ func (a *API) Run() error {
 
 }
 
-func (a *API) startListener() error {
+func (a *API) startListener(ctx context.Context) (err error) {
 	log.Debug().Msg("api.startListener started")
 	defer log.Debug().Msg("api.startListener ended")
 
-	defer a.serv.Close()
-	return a.serv.ListenAndServe()
+	c := make(chan struct{})
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			defer a.serv.Close()
+			err = a.serv.ListenAndServe()
+			c <- struct{}{}
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	case <-c:
+		return err
+	}
+
 }
 
-func (a *API) startUpdatingOrdersStatus() error {
+func (a *API) startUpdatingOrdersStatus(ctx context.Context) (err error) {
+	log.Debug().Msg("api.startUpdatingOrdersStatus started")
+	defer func() {
+		if err != nil {
+			log.Error().Err(err).Msg("api.startUpdatingOrdersStatus ended")
+		} else {
+			log.Debug().Msg("api.startUpdatingOrdersStatus ended")
+		}
+	}()
+
 	interval := a.app.Config().OrderStatusUpdateInterval()
-	if interval == time.Second*0 {
-		return nil
+	if interval == 0 {
+		return errInvalidIntervalUpdateOrderStatus
 	}
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
-		<-ticker.C
-		err := a.updateOrdersStatus()
-		if err != nil {
-			return err
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			err = a.updateOrdersStatus()
+			if err != nil {
+				return err
+			}
 		}
 	}
 

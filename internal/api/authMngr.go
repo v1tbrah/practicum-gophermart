@@ -11,8 +11,13 @@ import (
 )
 
 var (
-	ErrUserIDNotFound       = errors.New("user id not found")
-	ErrUnexpectedUserIDType = errors.New("unexpected user id type")
+	errUserIDNotFound       = errors.New("user id not found")
+	errUnexpectedUserIDType = errors.New("unexpected user id type")
+)
+
+var (
+	errEmptyAuthHeader   = errors.New("empty auth header")
+	errInvalidAuthHeader = errors.New("invalid auth header")
 )
 
 type authMngr struct {
@@ -47,12 +52,12 @@ func (a *authMngr) newAccessAndRefreshTokens(id int64) (accessToken string, refr
 func (a *authMngr) getIDFromAuthHeader(c *gin.Context) (int64, error) {
 	authHeader := c.GetHeader("Authorization")
 	if len(authHeader) == 0 {
-		return 0, ErrEmptyAuthHeader
+		return 0, errEmptyAuthHeader
 	}
 
 	headerParts := strings.Split(authHeader, " ")
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-		return 0, ErrInvalidAuthHeader
+		return 0, errInvalidAuthHeader
 	}
 
 	accessToken := headerParts[1]
@@ -66,12 +71,12 @@ func (a *authMngr) getIDFromAuthHeader(c *gin.Context) (int64, error) {
 func (a *authMngr) getID(c *gin.Context) (int64, error) {
 	id, ok := c.Get("id")
 	if !ok {
-		return 0, ErrUserIDNotFound
+		return 0, errUserIDNotFound
 	}
 
 	var userID int64
 	if userID, ok = id.(int64); !ok {
-		return 0, ErrUnexpectedUserIDType
+		return 0, errUnexpectedUserIDType
 	}
 	return userID, nil
 }

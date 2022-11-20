@@ -15,6 +15,20 @@ type accrualMngr struct {
 	client *resty.Client
 }
 
+type orderFromAccrualSystem struct {
+	Order   string  `json:"order"`
+	Status  string  `json:"status"`
+	Accrual float64 `json:"accrual"`
+}
+
+func (o *orderFromAccrualSystem) isFinal() bool {
+	return o.Status == "PROCESSED" || o.Status == "INVALID"
+}
+
+func (o *orderFromAccrualSystem) isInvalid() bool {
+	return o.Status == "INVALID"
+}
+
 func newAccrualMngr() *accrualMngr {
 	client := resty.New()
 	client.AddRetryCondition(
@@ -42,12 +56,6 @@ func (a *API) updateOrdersStatus() error {
 		return err
 	}
 
-	type orderFromAccrualSystem struct {
-		Order   string  `json:"order"`
-		Status  string  `json:"status"`
-		Accrual float64 `json:"accrual"`
-	}
-
 	orderStatusesFromAccrualSystem := make([]model.Order, 0, len(ordersWithNonFinalStatuses))
 
 	for _, order := range ordersWithNonFinalStatuses {
@@ -67,11 +75,11 @@ func (a *API) updateOrdersStatus() error {
 			return err
 		}
 
-		if newOrderFromAccrualSystem.Status == "REGISTERED" || newOrderFromAccrualSystem.Status == "PROCESSING" {
+		if !newOrderFromAccrualSystem.isFinal() {
 			continue
 		}
 
-		if newOrderFromAccrualSystem.Status == "INVALID" {
+		if newOrderFromAccrualSystem.isInvalid() {
 			newOrderFromAccrualSystem.Accrual = 0.0
 		}
 

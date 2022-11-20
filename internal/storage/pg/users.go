@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/rs/zerolog/log"
@@ -25,22 +24,18 @@ func prepareUserStmts(ctx context.Context, p *Pg) error {
 
 	newUsersStmts := usersStmts{}
 
-	if stmtAddUser, err := p.db.PrepareContext(ctx, queryAddUser); err != nil {
+	var err error
+
+	if newUsersStmts.stmtAddUser, err = p.db.PrepareContext(ctx, queryAddUser); err != nil {
 		return err
-	} else {
-		newUsersStmts.stmtAddUser = stmtAddUser
 	}
 
-	if stmtGetUser, err := p.db.PrepareContext(ctx, queryGetUser); err != nil {
+	if newUsersStmts.stmtGetUser, err = p.db.PrepareContext(ctx, queryGetUser); err != nil {
 		return err
-	} else {
-		newUsersStmts.stmtGetUser = stmtGetUser
 	}
 
-	if stmtGetUserPassword, err := p.db.PrepareContext(ctx, queryGetUserPassword); err != nil {
+	if newUsersStmts.stmtGetUserPassword, err = p.db.PrepareContext(ctx, queryGetUserPassword); err != nil {
 		return err
-	} else {
-		newUsersStmts.stmtGetUserPassword = stmtGetUserPassword
 	}
 
 	p.usersStmts = &newUsersStmts
@@ -48,7 +43,7 @@ func prepareUserStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) AddUser(c *gin.Context, user *model.User) (int64, error) {
+func (p *Pg) AddUser(c context.Context, user *model.User) (int64, error) {
 	log.Debug().Str("user", user.String()).Msg("Pg.AddUser START")
 	var err error
 	defer func() {
@@ -88,7 +83,7 @@ func (p *Pg) AddUser(c *gin.Context, user *model.User) (int64, error) {
 	return id, nil
 }
 
-func (p *Pg) GetUser(c *gin.Context, login, password string) (*model.User, error) {
+func (p *Pg) GetUser(c context.Context, login, password string) (*model.User, error) {
 	log.Debug().Str("login", login).Str("password", password).Msg("Pg.GetUser START")
 	var err error
 	defer func() {
@@ -111,7 +106,7 @@ func (p *Pg) GetUser(c *gin.Context, login, password string) (*model.User, error
 	return &user, nil
 }
 
-func (p *Pg) GetUserPassword(c *gin.Context, login string) (string, error) {
+func (p *Pg) GetUserPassword(c context.Context, login string) (string, error) {
 	log.Debug().Str("login", login).Msg("Pg.GetUserPassword START")
 	var err error
 	defer func() {

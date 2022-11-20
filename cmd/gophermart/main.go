@@ -18,12 +18,8 @@ func setGlobalLogLevel(lvl zerolog.Level) {
 
 func main() {
 	log.Info().Msg("gophermart START")
-	defer log.Info().Msg("gophermart END")
 
 	setGlobalLogLevel(zerolog.DebugLevel)
-
-	log.Debug().Msg("main started")
-	defer log.Debug().Msg("main ended")
 
 	newCfg, err := config.New(config.WithFlag, config.WithEnv)
 	if err != nil {
@@ -49,5 +45,6 @@ func main() {
 		log.Fatal().Err(err)
 	}
 
+	log.Info().Msg("gophermart END")
 	os.Exit(0)
 }

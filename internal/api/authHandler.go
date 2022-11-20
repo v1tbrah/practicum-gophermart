@@ -13,12 +13,7 @@ import (
 	"practicum-gophermart/internal/model"
 )
 
-var ErrUserAlreadyExists = errors.New("user already exists")
-
-var (
-	ErrEmptyAuthHeader   = errors.New("empty auth header")
-	ErrInvalidAuthHeader = errors.New("invalid auth header")
-)
+var errUserAlreadyExists = errors.New("user already exists")
 
 func (a *API) signUpHandler(c *gin.Context) {
 	log.Debug().Msg("api.signUp START")
@@ -34,7 +29,7 @@ func (a *API) signUpHandler(c *gin.Context) {
 	id, err := a.app.CreateUser(c, &requestUser)
 	if err != nil {
 		if errors.Is(err, app.ErrUserAlreadyExists) {
-			a.error(c, http.StatusConflict, ErrUserAlreadyExists)
+			a.error(c, http.StatusConflict, errUserAlreadyExists)
 		} else {
 			a.error(c, http.StatusBadRequest, err)
 		}
@@ -103,38 +98,38 @@ func (a *API) checkAuthMiddleware(c *gin.Context) {
 
 	id, err := a.authMngr.getIDFromAuthHeader(c)
 	if err != nil {
-		if errors.Is(err, ErrAccessTokenIsExpired) {
+		if errors.Is(err, errAccessTokenIsExpired) {
 
 			refreshToken, err := c.Cookie("refreshToken")
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
 				return
 			}
 
 			refreshSession, err := a.app.GetRefreshSessionByToken(c, refreshToken)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
 				return
 			}
 
 			if refreshTokenIsExpired := refreshSession.ExpiresIn < time.Now().Unix(); refreshTokenIsExpired {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
-					"access token error":  ErrAccessTokenIsExpired.Error(),
-					"refresh token error": ErrRefreshTokenIsExpired.Error(),
+					"access token error":  errAccessTokenIsExpired.Error(),
+					"refresh token error": errRefreshTokenIsExpired.Error(),
 				})
 				return
 			}
 
 			newAccessToken, newRefreshToken, newRefreshExpiresIn, err := a.authMngr.newAccessAndRefreshTokens(refreshSession.UserID)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
 				return
 			}
 
 			newRefreshSession := model.RefreshSession{UserID: refreshSession.UserID, Token: newRefreshToken, ExpiresIn: newRefreshExpiresIn}
 			err = a.app.NewRefreshSession(c, &newRefreshSession)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": ErrAccessTokenIsExpired.Error()})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
 				return
 			}
 
