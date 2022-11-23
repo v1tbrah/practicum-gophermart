@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
@@ -19,7 +20,7 @@ type API struct {
 	authMngr    *authMngr
 	app         Application
 	serv        *http.Server
-	accrualMngr *accrualMngr
+	accrualMngr *resty.Client
 }
 
 // New returns new API.
@@ -45,7 +46,7 @@ func New(application Application) (*API, error) {
 		Handler: newAPI.newRouter(),
 	}
 
-	newAPI.accrualMngr = newAccrualMngr()
+	newAPI.accrualMngr = resty.New()
 
 	return newAPI, nil
 }

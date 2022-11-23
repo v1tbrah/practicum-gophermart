@@ -5,15 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 
 	"practicum-gophermart/internal/model"
 )
-
-type accrualMngr struct {
-	client *resty.Client
-}
 
 type orderFromAccrualSystem struct {
 	Order   string  `json:"order"`
@@ -27,16 +22,6 @@ func (o *orderFromAccrualSystem) isFinal() bool {
 
 func (o *orderFromAccrualSystem) isInvalid() bool {
 	return o.Status == "INVALID"
-}
-
-func newAccrualMngr() *accrualMngr {
-	client := resty.New()
-	client.AddRetryCondition(
-		func(r *resty.Response, err error) bool {
-			return r.StatusCode() == http.StatusTooManyRequests
-		},
-	).SetRetryWaitTime(time.Second * 60)
-	return &accrualMngr{client: client}
 }
 
 func (a *API) updateOrdersStatus() error {
@@ -58,13 +43,21 @@ func (a *API) updateOrdersStatus() error {
 
 	orderStatusesFromAccrualSystem := make([]model.Order, 0, len(ordersWithNonFinalStatuses))
 
-	for _, order := range ordersWithNonFinalStatuses {
-		resp, err := a.accrualMngr.client.R().SetPathParam("number", order.Number).Get(a.app.Config().AccrualGetOrder())
+	for i := 0; i < len(ordersWithNonFinalStatuses); i++ {
+
+		order := ordersWithNonFinalStatuses[i]
+
+		resp, err := a.accrualMngr.R().SetPathParam("number", order.Number).Get(a.app.Config().AccrualGetOrder())
 		if err != nil {
 			return err
 		}
 
 		if resp.StatusCode() != http.StatusOK {
+			if resp.StatusCode() == http.StatusTooManyRequests {
+				a.accrualMngr.SetRetryWaitTime(time.Second)
+				time.Sleep(time.Second)
+				i--
+			}
 			continue
 		}
 
