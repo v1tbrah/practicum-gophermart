@@ -41,6 +41,7 @@ func (a *API) updateOrdersStatus() error {
 		return err
 	}
 
+
 	orderStatusesFromAccrualSystem := make([]model.Order, 0, len(ordersWithNonFinalStatuses))
 
 	for i := 0; i < len(ordersWithNonFinalStatuses); i++ {
@@ -48,6 +49,7 @@ func (a *API) updateOrdersStatus() error {
 		order := ordersWithNonFinalStatuses[i]
 
 		resp, err := a.accrualMngr.R().SetPathParam("number", order.Number).Get(a.app.Config().AccrualGetOrder())
+
 		if err != nil {
 			return err
 		}

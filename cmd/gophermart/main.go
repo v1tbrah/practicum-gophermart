@@ -21,6 +21,7 @@ func main() {
 
 	setGlobalLogLevel(zerolog.DebugLevel)
 
+
 	newCfg, err := config.New(config.WithFlag, config.WithEnv)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to create new config")
@@ -45,6 +46,8 @@ func main() {
 		log.Fatal().Err(err)
 	}
 
+
 	log.Info().Msg("gophermart END")
+
 	os.Exit(0)
 }
