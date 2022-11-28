@@ -42,7 +42,7 @@ func New(application Application) (*API, error) {
 	newAPI.app = application
 
 	newAPI.serv = &http.Server{
-		Addr:    application.Config().ServAddr(),
+		Addr:    application.Config().ServAPIAddr(),
 		Handler: newAPI.newRouter(),
 	}
 
@@ -90,8 +90,6 @@ func (a *API) Run() error {
 	log.Debug().Msg("api.Run started")
 	defer log.Debug().Msg("api.Run ended")
 
-	log.Info().Msg("api started")
-
 	errG, ctx := errgroup.WithContext(context.Background())
 
 	errG.Go(func() error {
@@ -129,6 +127,7 @@ func (a *API) startListener(ctx context.Context) (err error) {
 			return
 		default:
 			defer a.serv.Close()
+			log.Info().Str("addr", a.serv.Addr).Msg("starting http server")
 			err = a.serv.ListenAndServe()
 			c <- struct{}{}
 		}

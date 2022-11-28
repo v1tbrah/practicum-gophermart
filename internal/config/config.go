@@ -2,58 +2,71 @@ package config
 
 import (
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
-	servAddr                  string
-	pgConnString              string
-	accrualAddr               string
+	servAPIAddr  string
+	pgConnString string
+
+	accrualAPIAddr            string
 	accrualGetOrder           string
 	orderStatusUpdateInterval time.Duration
+
+	logLevel string
 }
 
-func New(options ...string) (*Config, error) {
-	log.Debug().Strs("options", options).Msg("config.New started")
-	var err error
-	cfg := &Config{}
-	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("config.New ended")
-		} else {
-			log.Debug().Str("config", cfg.String()).Msg("config.New ended")
-		}
-	}()
+func New(options ...string) (newCfg *Config, err error) {
 
-	cfg.orderStatusUpdateInterval = time.Second * 5
+	newCfg = &Config{}
 
 	for _, opt := range options {
 		switch opt {
 		case WithFlag:
-			cfg.parseFromOsArgs()
+			newCfg.parseFromOsArgs()
 		case WithEnv:
-			if err = cfg.parseFromEnv(); err != nil {
+			if err = newCfg.parseFromEnv(); err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	cfg.accrualGetOrder = cfg.accrualAddr + "/api/orders/{number}"
+	newCfg.setDefaultIfNotConfigured()
 
-	return cfg, nil
+	newCfg.accrualGetOrder = newCfg.accrualAPIAddr + "/api/orders/{number}"
+
+	return newCfg, nil
 }
 
-func (c *Config) ServAddr() string {
-	return c.servAddr
+func (c *Config) setDefaultIfNotConfigured() {
+
+	if c.servAPIAddr == "" {
+		c.servAPIAddr = "localhost:8081"
+	}
+
+	if c.accrualAPIAddr == "" {
+		c.accrualAPIAddr = "localhost:8080"
+	}
+
+	if c.orderStatusUpdateInterval == 0 {
+		c.orderStatusUpdateInterval = time.Second * 5
+	}
+
+	if c.logLevel == "" {
+		c.logLevel = "info"
+	}
+
+}
+
+func (c *Config) ServAPIAddr() string {
+	return c.servAPIAddr
 }
 
 func (c *Config) PgConnString() string {
 	return c.pgConnString
 }
 
-func (c *Config) AccrualAddr() string {
-	return c.accrualAddr
+func (c *Config) AccrualAPIAddr() string {
+	return c.accrualAPIAddr
 }
 
 func (c *Config) AccrualGetOrder() string {
@@ -64,12 +77,17 @@ func (c *Config) OrderStatusUpdateInterval() time.Duration {
 	return c.orderStatusUpdateInterval
 }
 
+func (c *Config) LogLevel() string {
+	return c.logLevel
+}
+
 func (c *Config) String() string {
 	if c == nil {
 		return "config is nil pointer"
 	}
-	return "servAddr: " + c.servAddr +
-		" accrualAddr: " + c.accrualAddr +
+	return "servAPIAddr: " + c.servAPIAddr +
+		" accrualAPIAddr: " + c.accrualAPIAddr +
 		" accrualGetOrder: " + c.accrualGetOrder +
-		" orderStatusUpdateInterval" + c.orderStatusUpdateInterval.String()
+		" orderStatusUpdateInterval" + c.orderStatusUpdateInterval.String() +
+		" logLevel" + c.LogLevel()
 }

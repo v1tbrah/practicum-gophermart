@@ -2,51 +2,55 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"time"
 
 	"github.com/caarlos0/env/v6"
-	"github.com/rs/zerolog/log"
 )
 
 func (c *Config) parseFromOsArgs() {
-	log.Debug().Msg("config.parseFromOsArgs started")
-	defer log.Debug().Msg("config.parseFromOsArgs ended")
 
-	flag.StringVar(&c.servAddr, "a", c.servAddr, "service start address and port")
-	flag.StringVar(&c.pgConnString, "d", c.pgConnString, "database connection address")
-	flag.StringVar(&c.accrualAddr, "r", c.accrualAddr, "address of the accrual system")
+	flag.StringVar(&c.servAPIAddr, "a", c.servAPIAddr, "api server run address")
+	flag.StringVar(&c.pgConnString, "d", c.pgConnString, "database connection string")
+	flag.StringVar(&c.accrualAPIAddr, "r", c.accrualAPIAddr, "api accrual run address")
 	flag.DurationVar(&c.orderStatusUpdateInterval, "u", c.orderStatusUpdateInterval, "order status update interval")
+	flag.StringVar(&c.logLevel, "l", c.logLevel, "log level")
 
 	flag.Parse()
 }
 
-func (c *Config) parseFromEnv() error {
-	log.Debug().Msg("config.parseFromEnv started")
-	var err error
-	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("config.parseFromEnv ended")
-		} else {
-			log.Debug().Msg("config.parseFromEnv ended")
-		}
-	}()
+func (c *Config) parseFromEnv() (err error) {
 
 	envConfig := struct {
-		ServAddr                  string        `env:"RUN_ADDRESS" toml:"RUN_ADDRESS"`
+		ServAPIAddr               string        `env:"RUN_ADDRESS" toml:"RUN_ADDRESS"`
 		PgConnString              string        `env:"DATABASE_URI" toml:"DATABASE_URI"`
-		AccrualAddr               string        `env:"ACCRUAL_SYSTEM_ADDRESS" toml:"ACCRUAL_SYSTEM_ADDRESS"`
+		AccrualAPIAddr            string        `env:"ACCRUAL_SYSTEM_ADDRESS" toml:"ACCRUAL_SYSTEM_ADDRESS"`
 		OrderStatusUpdateInterval time.Duration `env:"ORDER_STATUS_UPDATE_INTERVAL" toml:"ORDER_STATUS_UPDATE_INTERVAL"`
+		LogLevel                  string        `env:"LOG_LEVEL" toml:"LOG_LEVEL"`
 	}{}
 
 	if err = env.Parse(&envConfig); err != nil {
-		return err
+		return fmt.Errorf(`parsing config from env: %w`, err)
 	}
 
-	c.servAddr = envConfig.ServAddr
-	c.pgConnString = envConfig.PgConnString
-	c.accrualAddr = envConfig.AccrualAddr
-	if envConfig.OrderStatusUpdateInterval != time.Second*0 {
+	if envConfig.ServAPIAddr != "" {
+		c.servAPIAddr = envConfig.ServAPIAddr
+	}
+
+	if envConfig.PgConnString != "" {
+		c.pgConnString = envConfig.PgConnString
+	}
+
+	if envConfig.AccrualAPIAddr != "" {
+		c.accrualAPIAddr = envConfig.AccrualAPIAddr
+	}
+
+	if envConfig.OrderStatusUpdateInterval != 0 {
 		c.orderStatusUpdateInterval = envConfig.OrderStatusUpdateInterval
+	}
+
+	if envConfig.LogLevel != "" {
+		c.logLevel = envConfig.LogLevel
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -15,33 +16,40 @@ func setGlobalLogLevel(lvl zerolog.Level) {
 }
 
 func main() {
-	log.Info().Msg("gophermart START")
+	gin.SetMode(gin.ReleaseMode)
 
-	setGlobalLogLevel(zerolog.DebugLevel)
-
-	newCfg, err := config.New(config.WithFlag, config.WithEnv)
+	cfgOptions := []string{config.WithFlag, config.WithEnv}
+	newCfg, err := config.New(cfgOptions...)
 	if err != nil {
-		log.Fatal().Err(err).Msg("unable to create new config")
+		log.Fatal().Err(err).Str("cfg options", cfgOptions[0]+", "+cfgOptions[1]).Msg("creating new config")
 	}
+
+	logLevel, err := zerolog.ParseLevel(newCfg.LogLevel())
+	if err != nil {
+		log.Fatal().Err(err).Strs("cfg options", cfgOptions).Msg("parsing log level")
+	}
+	zerolog.SetGlobalLevel(logLevel)
 
 	newStorage, err := storage.New(newCfg)
 	if err != nil {
-		log.Fatal().Err(err).Str("config", newCfg.String()).Msg("unable to create new storage")
+		log.Fatal().Err(err).Str("config", newCfg.String()).Msg("creating new storage")
 	}
+	log.Info().Msg("storage created")
 
 	newApp, err := app.New(newStorage, newCfg)
 	if err != nil {
-		log.Fatal().Err(err).Str("config", newCfg.String()).Msg("unable to create new app")
+		log.Fatal().Err(err).Str("config", newCfg.String()).Msg("creating new app")
 	}
+	log.Info().Msg("app created")
 
 	newAPI, err := api.New(newApp)
 	if err != nil {
-		log.Fatal().Err(err).Str("config", newCfg.String()).Msg("unable to create new api")
+		log.Fatal().Err(err).Str("config", newCfg.String()).Msg("creating new API")
 	}
+	log.Info().Msg("API created")
 
 	if err = newAPI.Run(); err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("running api")
 	}
 
-	log.Info().Msg("gophermart END")
 }
