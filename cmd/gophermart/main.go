@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -18,12 +16,8 @@ func setGlobalLogLevel(lvl zerolog.Level) {
 
 func main() {
 	log.Info().Msg("gophermart START")
-	defer log.Info().Msg("gophermart END")
 
 	setGlobalLogLevel(zerolog.DebugLevel)
-
-	log.Debug().Msg("main started")
-	defer log.Debug().Msg("main ended")
 
 	newCfg, err := config.New(config.WithFlag, config.WithEnv)
 	if err != nil {
@@ -49,5 +43,5 @@ func main() {
 		log.Fatal().Err(err)
 	}
 
-	os.Exit(0)
+	log.Info().Msg("gophermart END")
 }

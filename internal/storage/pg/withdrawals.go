@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
 	"practicum-gophermart/internal/model"
@@ -20,16 +19,14 @@ func prepareWithdrawalsStmts(ctx context.Context, p *Pg) error {
 
 	newWithdrawalsStmts := withdrawalsStmts{}
 
-	if stmtAddWithdrawal, err := p.db.PrepareContext(ctx, queryAddWithdrawal); err != nil {
+	var err error
+
+	if newWithdrawalsStmts.stmtAddWithdrawal, err = p.db.PrepareContext(ctx, queryAddWithdrawal); err != nil {
 		return err
-	} else {
-		newWithdrawalsStmts.stmtAddWithdrawal = stmtAddWithdrawal
 	}
 
-	if stmtGetWithdrawals, err := p.db.PrepareContext(ctx, queryGetWithdrawals); err != nil {
+	if newWithdrawalsStmts.stmtGetWithdrawals, err = p.db.PrepareContext(ctx, queryGetWithdrawals); err != nil {
 		return err
-	} else {
-		newWithdrawalsStmts.stmtGetWithdrawals = stmtGetWithdrawals
 	}
 
 	p.withdrawalsStmts = &newWithdrawalsStmts
@@ -37,7 +34,7 @@ func prepareWithdrawalsStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) AddWithdrawal(c *gin.Context, userID int64, withdraw model.Withdraw) error {
+func (p *Pg) AddWithdrawal(ctx context.Context, userID int64, withdraw model.Withdraw) error {
 	log.Debug().Msg("Pg.AddWithdrawal START")
 	var err error
 	defer func() {
@@ -53,14 +50,14 @@ func (p *Pg) AddWithdrawal(c *gin.Context, userID int64, withdraw model.Withdraw
 		return err
 	}
 
-	_, err = tx.StmtContext(c, p.withdrawalsStmts.stmtAddWithdrawal).ExecContext(c, userID, withdraw.Order, withdraw.Sum, withdraw.ProcessedAt)
+	_, err = tx.StmtContext(ctx, p.withdrawalsStmts.stmtAddWithdrawal).ExecContext(ctx, userID, withdraw.Order, withdraw.Sum, withdraw.ProcessedAt)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	var newBalance float64
-	err = tx.StmtContext(c, p.balanceStmts.stmtReduceBalance).QueryRowContext(c, userID, withdraw.Sum).Scan(&newBalance)
+	err = tx.StmtContext(ctx, p.balanceStmts.stmtReduceBalance).QueryRowContext(ctx, userID, withdraw.Sum).Scan(&newBalance)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -78,7 +75,7 @@ func (p *Pg) AddWithdrawal(c *gin.Context, userID int64, withdraw model.Withdraw
 	return nil
 }
 
-func (p *Pg) GetWithdrawals(c *gin.Context, userID int64) ([]model.Withdraw, error) {
+func (p *Pg) GetWithdrawals(ctx context.Context, userID int64) ([]model.Withdraw, error) {
 	log.Debug().Msg("Pg.GetWithdrawals START")
 	var err error
 	defer func() {
@@ -89,7 +86,7 @@ func (p *Pg) GetWithdrawals(c *gin.Context, userID int64) ([]model.Withdraw, err
 		}
 	}()
 
-	rows, err := p.withdrawalsStmts.stmtGetWithdrawals.QueryContext(c, userID)
+	rows, err := p.withdrawalsStmts.stmtGetWithdrawals.QueryContext(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

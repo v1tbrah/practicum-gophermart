@@ -3,9 +3,8 @@
 package mocks
 
 import (
+	context "context"
 	config "practicum-gophermart/internal/config"
-
-	gin "github.com/gin-gonic/gin"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -18,11 +17,11 @@ type Application struct {
 }
 
 // AddOrder provides a mock function with given fields: c, order
-func (_m *Application) AddOrder(c *gin.Context, order *model.Order) error {
+func (_m *Application) AddOrder(c context.Context, order *model.Order) error {
 	ret := _m.Called(c, order)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*gin.Context, *model.Order) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Order) error); ok {
 		r0 = rf(c, order)
 	} else {
 		r0 = ret.Error(0)
@@ -62,18 +61,18 @@ func (_m *Application) Config() *config.Config {
 }
 
 // CreateUser provides a mock function with given fields: c, user
-func (_m *Application) CreateUser(c *gin.Context, user *model.User) (int64, error) {
+func (_m *Application) CreateUser(c context.Context, user *model.User) (int64, error) {
 	ret := _m.Called(c, user)
 
 	var r0 int64
-	if rf, ok := ret.Get(0).(func(*gin.Context, *model.User) int64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.User) int64); ok {
 		r0 = rf(c, user)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*gin.Context, *model.User) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.User) error); ok {
 		r1 = rf(c, user)
 	} else {
 		r1 = ret.Error(1)
@@ -83,25 +82,25 @@ func (_m *Application) CreateUser(c *gin.Context, user *model.User) (int64, erro
 }
 
 // GetBalance provides a mock function with given fields: c, userID
-func (_m *Application) GetBalance(c *gin.Context, userID int64) (float64, float64, error) {
+func (_m *Application) GetBalance(c context.Context, userID int64) (float64, float64, error) {
 	ret := _m.Called(c, userID)
 
 	var r0 float64
-	if rf, ok := ret.Get(0).(func(*gin.Context, int64) float64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) float64); ok {
 		r0 = rf(c, userID)
 	} else {
 		r0 = ret.Get(0).(float64)
 	}
 
 	var r1 float64
-	if rf, ok := ret.Get(1).(func(*gin.Context, int64) float64); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, int64) float64); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Get(1).(float64)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(*gin.Context, int64) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, int64) error); ok {
 		r2 = rf(c, userID)
 	} else {
 		r2 = ret.Error(2)
@@ -134,11 +133,11 @@ func (_m *Application) GetOrdersByStatuses(statuses []string) ([]model.Order, er
 }
 
 // GetOrdersByUser provides a mock function with given fields: c, userID
-func (_m *Application) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error) {
+func (_m *Application) GetOrdersByUser(c context.Context, userID int64) ([]model.Order, error) {
 	ret := _m.Called(c, userID)
 
 	var r0 []model.Order
-	if rf, ok := ret.Get(0).(func(*gin.Context, int64) []model.Order); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []model.Order); ok {
 		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
@@ -147,7 +146,7 @@ func (_m *Application) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Or
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*gin.Context, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
@@ -157,11 +156,11 @@ func (_m *Application) GetOrdersByUser(c *gin.Context, userID int64) ([]model.Or
 }
 
 // GetRefreshSessionByToken provides a mock function with given fields: c, refreshToken
-func (_m *Application) GetRefreshSessionByToken(c *gin.Context, refreshToken string) (*model.RefreshSession, error) {
+func (_m *Application) GetRefreshSessionByToken(c context.Context, refreshToken string) (*model.RefreshSession, error) {
 	ret := _m.Called(c, refreshToken)
 
 	var r0 *model.RefreshSession
-	if rf, ok := ret.Get(0).(func(*gin.Context, string) *model.RefreshSession); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.RefreshSession); ok {
 		r0 = rf(c, refreshToken)
 	} else {
 		if ret.Get(0) != nil {
@@ -170,7 +169,7 @@ func (_m *Application) GetRefreshSessionByToken(c *gin.Context, refreshToken str
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*gin.Context, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(c, refreshToken)
 	} else {
 		r1 = ret.Error(1)
@@ -180,11 +179,11 @@ func (_m *Application) GetRefreshSessionByToken(c *gin.Context, refreshToken str
 }
 
 // GetUser provides a mock function with given fields: c, login, pwd
-func (_m *Application) GetUser(c *gin.Context, login string, pwd string) (*model.User, error) {
+func (_m *Application) GetUser(c context.Context, login string, pwd string) (*model.User, error) {
 	ret := _m.Called(c, login, pwd)
 
 	var r0 *model.User
-	if rf, ok := ret.Get(0).(func(*gin.Context, string, string) *model.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.User); ok {
 		r0 = rf(c, login, pwd)
 	} else {
 		if ret.Get(0) != nil {
@@ -193,7 +192,7 @@ func (_m *Application) GetUser(c *gin.Context, login string, pwd string) (*model
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*gin.Context, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(c, login, pwd)
 	} else {
 		r1 = ret.Error(1)
@@ -203,11 +202,11 @@ func (_m *Application) GetUser(c *gin.Context, login string, pwd string) (*model
 }
 
 // GetWithdrawals provides a mock function with given fields: c, userID
-func (_m *Application) GetWithdrawals(c *gin.Context, userID int64) ([]model.Withdraw, error) {
+func (_m *Application) GetWithdrawals(c context.Context, userID int64) ([]model.Withdraw, error) {
 	ret := _m.Called(c, userID)
 
 	var r0 []model.Withdraw
-	if rf, ok := ret.Get(0).(func(*gin.Context, int64) []model.Withdraw); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64) []model.Withdraw); ok {
 		r0 = rf(c, userID)
 	} else {
 		if ret.Get(0) != nil {
@@ -216,7 +215,7 @@ func (_m *Application) GetWithdrawals(c *gin.Context, userID int64) ([]model.Wit
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*gin.Context, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
 		r1 = rf(c, userID)
 	} else {
 		r1 = ret.Error(1)
@@ -226,11 +225,11 @@ func (_m *Application) GetWithdrawals(c *gin.Context, userID int64) ([]model.Wit
 }
 
 // NewRefreshSession provides a mock function with given fields: c, newRefreshSession
-func (_m *Application) NewRefreshSession(c *gin.Context, newRefreshSession *model.RefreshSession) error {
+func (_m *Application) NewRefreshSession(c context.Context, newRefreshSession *model.RefreshSession) error {
 	ret := _m.Called(c, newRefreshSession)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*gin.Context, *model.RefreshSession) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.RefreshSession) error); ok {
 		r0 = rf(c, newRefreshSession)
 	} else {
 		r0 = ret.Error(0)
@@ -254,11 +253,11 @@ func (_m *Application) UpdateOrderStatuses(newOrderStatuses []model.Order) error
 }
 
 // WithdrawFromBalance provides a mock function with given fields: c, userID, withdraw
-func (_m *Application) WithdrawFromBalance(c *gin.Context, userID int64, withdraw model.Withdraw) error {
+func (_m *Application) WithdrawFromBalance(c context.Context, userID int64, withdraw model.Withdraw) error {
 	ret := _m.Called(c, userID, withdraw)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*gin.Context, int64, model.Withdraw) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64, model.Withdraw) error); ok {
 		r0 = rf(c, userID, withdraw)
 	} else {
 		r0 = ret.Error(0)

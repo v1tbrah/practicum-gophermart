@@ -5,24 +5,28 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 
 	"practicum-gophermart/internal/model"
 )
 
-type accrualMngr struct {
-	client *resty.Client
+const (
+	statusProcessedFromAccrual = "PROCESSED"
+	statusInvalidFromAccrual   = "INVALID"
+)
+
+type orderFromAccrualSystem struct {
+	Order   string  `json:"order"`
+	Status  string  `json:"status"`
+	Accrual float64 `json:"accrual"`
 }
 
-func newAccrualMngr() *accrualMngr {
-	client := resty.New()
-	client.AddRetryCondition(
-		func(r *resty.Response, err error) bool {
-			return r.StatusCode() == http.StatusTooManyRequests
-		},
-	).SetRetryWaitTime(time.Second * 60)
-	return &accrualMngr{client: client}
+func (o *orderFromAccrualSystem) isFinal() bool {
+	return o.Status == statusProcessedFromAccrual || o.Status == statusInvalidFromAccrual
+}
+
+func (o *orderFromAccrualSystem) isInvalid() bool {
+	return o.Status == statusInvalidFromAccrual
 }
 
 func (a *API) updateOrdersStatus() error {
@@ -42,21 +46,25 @@ func (a *API) updateOrdersStatus() error {
 		return err
 	}
 
-	type orderFromAccrualSystem struct {
-		Order   string  `json:"order"`
-		Status  string  `json:"status"`
-		Accrual float64 `json:"accrual"`
-	}
-
 	orderStatusesFromAccrualSystem := make([]model.Order, 0, len(ordersWithNonFinalStatuses))
 
-	for _, order := range ordersWithNonFinalStatuses {
-		resp, err := a.accrualMngr.client.R().SetPathParam("number", order.Number).Get(a.app.Config().AccrualGetOrder())
+	accrulGetOrderURL := a.app.Config().AccrualGetOrder()
+	for i := 0; i < len(ordersWithNonFinalStatuses); i++ {
+
+		order := ordersWithNonFinalStatuses[i]
+
+		resp, err := a.accrualMngr.R().SetPathParam("number", order.Number).Get(accrulGetOrderURL)
+
 		if err != nil {
 			return err
 		}
 
 		if resp.StatusCode() != http.StatusOK {
+			if resp.StatusCode() == http.StatusTooManyRequests {
+				a.accrualMngr.SetRetryWaitTime(time.Second)
+				time.Sleep(time.Second)
+				i--
+			}
 			continue
 		}
 
@@ -67,11 +75,11 @@ func (a *API) updateOrdersStatus() error {
 			return err
 		}
 
-		if newOrderFromAccrualSystem.Status == "REGISTERED" || newOrderFromAccrualSystem.Status == "PROCESSING" {
+		if !newOrderFromAccrualSystem.isFinal() {
 			continue
 		}
 
-		if newOrderFromAccrualSystem.Status == "INVALID" {
+		if newOrderFromAccrualSystem.isInvalid() {
 			newOrderFromAccrualSystem.Accrual = 0.0
 		}
 

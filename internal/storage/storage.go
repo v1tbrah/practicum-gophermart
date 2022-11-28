@@ -1,31 +1,31 @@
 package storage
 
 import (
+	"context"
 	"errors"
 
 	"practicum-gophermart/internal/config"
 	"practicum-gophermart/internal/model"
 	"practicum-gophermart/internal/storage/pg"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
 var ErrEmptyConfig = errors.New("empty config")
 
 type Storage interface {
-	AddUser(c *gin.Context, user *model.User) (int64, error)
-	GetUser(c *gin.Context, login string, password string) (*model.User, error)
-	GetUserPassword(c *gin.Context, login string) (string, error)
-	UpdateRefreshSession(c *gin.Context, newRefreshSession *model.RefreshSession) error
-	GetRefreshSessionByToken(c *gin.Context, refreshToken string) (*model.RefreshSession, error)
-	AddOrder(c *gin.Context, order *model.Order) error
-	GetOrdersByUser(c *gin.Context, userID int64) ([]model.Order, error)
+	AddUser(ctx context.Context, user *model.User) (int64, error)
+	GetUser(ctx context.Context, login string, password string) (*model.User, error)
+	GetUserPassword(ctx context.Context, login string) (string, error)
+	UpdateRefreshSession(ctx context.Context, newRefreshSession *model.RefreshSession) error
+	GetRefreshSessionByToken(ctx context.Context, refreshToken string) (*model.RefreshSession, error)
+	AddOrder(ctx context.Context, order *model.Order) error
+	GetOrdersByUser(ctx context.Context, userID int64) ([]model.Order, error)
 	GetOrdersByStatuses(statuses []string) ([]model.Order, error)
 	UpdateOrderStatuses(newOrderStatuses []model.Order) error
-	GetBalance(c *gin.Context, userID int64) (balance float64, withdrawn float64, err error)
-	AddWithdrawal(c *gin.Context, userID int64, withdraw model.Withdraw) error
-	GetWithdrawals(c *gin.Context, userID int64) ([]model.Withdraw, error)
+	GetBalance(ctx context.Context, userID int64) (balance float64, withdrawn float64, err error)
+	AddWithdrawal(ctx context.Context, userID int64, withdraw model.Withdraw) error
+	GetWithdrawals(ctx context.Context, userID int64) ([]model.Withdraw, error)
 	Close() error
 }
 

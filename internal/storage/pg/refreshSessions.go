@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
 	"practicum-gophermart/internal/model"
@@ -23,22 +22,18 @@ func prepareRefreshSessionStmts(ctx context.Context, p *Pg) error {
 
 	newRefreshSessionStmts := refreshSessionStmts{}
 
-	if stmtAddRefreshSession, err := p.db.PrepareContext(ctx, queryAddRefreshSession); err != nil {
+	var err error
+
+	if newRefreshSessionStmts.stmtAddRefreshSession, err = p.db.PrepareContext(ctx, queryAddRefreshSession); err != nil {
 		return err
-	} else {
-		newRefreshSessionStmts.stmtAddRefreshSession = stmtAddRefreshSession
 	}
 
-	if stmtDeleteRefreshSession, err := p.db.PrepareContext(ctx, queryDeleteRefreshSessions); err != nil {
+	if newRefreshSessionStmts.stmtDeleteRefreshSession, err = p.db.PrepareContext(ctx, queryDeleteRefreshSessions); err != nil {
 		return err
-	} else {
-		newRefreshSessionStmts.stmtDeleteRefreshSession = stmtDeleteRefreshSession
 	}
 
-	if stmtGetRefreshSessionByToken, err := p.db.PrepareContext(ctx, queryGetRefreshSessionByToken); err != nil {
+	if newRefreshSessionStmts.stmtGetRefreshSessionByToken, err = p.db.PrepareContext(ctx, queryGetRefreshSessionByToken); err != nil {
 		return err
-	} else {
-		newRefreshSessionStmts.stmtGetRefreshSessionByToken = stmtGetRefreshSessionByToken
 	}
 
 	p.refreshSessionStmts = &newRefreshSessionStmts
@@ -46,7 +41,7 @@ func prepareRefreshSessionStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) UpdateRefreshSession(c *gin.Context, newRefreshSession *model.RefreshSession) error {
+func (p *Pg) UpdateRefreshSession(ctx context.Context, newRefreshSession *model.RefreshSession) error {
 	log.Debug().Str("UserID", fmt.Sprint(newRefreshSession.UserID)).Msg("Pg.UpdateRefreshSession START")
 	var err error
 	defer func() {
@@ -63,12 +58,12 @@ func (p *Pg) UpdateRefreshSession(c *gin.Context, newRefreshSession *model.Refre
 	}
 	defer tx.Rollback()
 
-	_, err = tx.StmtContext(c, p.refreshSessionStmts.stmtDeleteRefreshSession).ExecContext(c, newRefreshSession.UserID)
+	_, err = tx.StmtContext(ctx, p.refreshSessionStmts.stmtDeleteRefreshSession).ExecContext(ctx, newRefreshSession.UserID)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.StmtContext(c, p.refreshSessionStmts.stmtAddRefreshSession).ExecContext(c,
+	_, err = tx.StmtContext(ctx, p.refreshSessionStmts.stmtAddRefreshSession).ExecContext(ctx,
 		newRefreshSession.UserID,
 		newRefreshSession.Token,
 		newRefreshSession.ExpiresIn)
@@ -84,7 +79,7 @@ func (p *Pg) UpdateRefreshSession(c *gin.Context, newRefreshSession *model.Refre
 	return nil
 }
 
-func (p *Pg) GetRefreshSessionByToken(c *gin.Context, token string) (*model.RefreshSession, error) {
+func (p *Pg) GetRefreshSessionByToken(c context.Context, token string) (*model.RefreshSession, error) {
 	log.Debug().Msg("Pg.GetRefreshSessionByToken START")
 	var err error
 	defer func() {

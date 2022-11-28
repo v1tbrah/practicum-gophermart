@@ -10,12 +10,13 @@ on:
       - authHandlers
       - orderHandlers
       - balanceHandlers
+      - review-branch
 
 jobs:
 
   build:
     runs-on: ubuntu-latest
-    container: golang:1.17
+    container: golang:1.19
 
     services:
       postgres:

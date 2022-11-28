@@ -1,9 +1,9 @@
 package app
 
 import (
+	"context"
 	"errors"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
 	"practicum-gophermart/internal/model"
@@ -12,7 +12,7 @@ import (
 
 var ErrInsufficientFunds = errors.New("there are not enough funds in the account")
 
-func (a *app) GetBalance(c *gin.Context, userID int64) (float64, float64, error) {
+func (a *App) GetBalance(c context.Context, userID int64) (float64, float64, error) {
 	log.Debug().Msg("app.GetBalance START")
 	var err error
 	defer func() {
@@ -31,7 +31,7 @@ func (a *app) GetBalance(c *gin.Context, userID int64) (float64, float64, error)
 	return balance, withdrawn, nil
 }
 
-func (a *app) WithdrawFromBalance(c *gin.Context, userID int64, withdraw model.Withdraw) error {
+func (a *App) WithdrawFromBalance(c context.Context, userID int64, withdraw model.Withdraw) error {
 	log.Debug().Msg("app.WithdrawFromBalance START")
 	var err error
 	defer func() {
@@ -53,7 +53,7 @@ func (a *app) WithdrawFromBalance(c *gin.Context, userID int64, withdraw model.W
 	return nil
 }
 
-func (a *app) GetWithdrawals(c *gin.Context, userID int64) ([]model.Withdraw, error) {
+func (a *App) GetWithdrawals(c context.Context, userID int64) ([]model.Withdraw, error) {
 	log.Debug().Msg("app.GetWithdrawals START")
 	var err error
 	defer func() {

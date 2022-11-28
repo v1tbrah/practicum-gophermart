@@ -5,17 +5,18 @@ on:
   pull_request:
   push:
     branches:
-      - master
       - main
+      - master
       - authHandlers
       - orderHandlers
       - balanceHandlers
+      - review-branch
 
 jobs:
 
   statictest:
     runs-on: ubuntu-latest
-    container: golang:1.17
+    container: golang:1.19
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

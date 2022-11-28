@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	ErrInvalidOrderNumber            = errors.New("invalid order number")
-	ErrOrderWasUploadedByCurrentUser = errors.New("the order was uploaded by current user")
-	ErrOrderWasUploadedByAnotherUser = errors.New("the order was uploaded by another user")
+	errInvalidOrderNumber            = errors.New("invalid order number")
+	errOrderWasUploadedByCurrentUser = errors.New("the order was uploaded by current user")
+	errOrderWasUploadedByAnotherUser = errors.New("the order was uploaded by another user")
 )
 
 func (a *API) setOrderHandler(c *gin.Context) {
@@ -41,7 +41,7 @@ func (a *API) setOrderHandler(c *gin.Context) {
 		a.error(c, http.StatusUnprocessableEntity, err)
 		return
 	} else if !isValidNumber(int64(numberForCheckValid)) {
-		a.error(c, http.StatusUnprocessableEntity, ErrInvalidOrderNumber)
+		a.error(c, http.StatusUnprocessableEntity, errInvalidOrderNumber)
 		return
 	}
 
@@ -54,9 +54,9 @@ func (a *API) setOrderHandler(c *gin.Context) {
 
 	if err = a.app.AddOrder(c, &order); err != nil {
 		if errors.Is(err, app.ErrOrderWasUploadedByAnotherUser) {
-			a.error(c, http.StatusConflict, ErrOrderWasUploadedByAnotherUser)
+			a.error(c, http.StatusConflict, errOrderWasUploadedByAnotherUser)
 		} else if errors.Is(err, app.ErrOrderWasUploadedByCurrentUser) {
-			a.respond(c, http.StatusOK, ErrOrderWasUploadedByCurrentUser)
+			a.respond(c, http.StatusOK, errOrderWasUploadedByCurrentUser)
 		} else {
 			a.error(c, http.StatusInternalServerError, nil)
 		}

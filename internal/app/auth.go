@@ -1,10 +1,10 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 
@@ -18,7 +18,7 @@ var (
 	ErrRefreshSessionIsNotExist = errors.New("refresh session is not exists")
 )
 
-func (a *app) CreateUser(c *gin.Context, user *model.User) (int64, error) {
+func (a *App) CreateUser(c context.Context, user *model.User) (int64, error) {
 	log.Debug().Msg("app.CreateUser START")
 	var err error
 	defer func() {
@@ -46,7 +46,7 @@ func (a *app) CreateUser(c *gin.Context, user *model.User) (int64, error) {
 	return id, nil
 }
 
-func (a *app) GetUser(c *gin.Context, login, pwd string) (*model.User, error) {
+func (a *App) GetUser(c context.Context, login, pwd string) (*model.User, error) {
 	log.Debug().Msg("app.GetUser START")
 	var err error
 	defer func() {
@@ -81,7 +81,7 @@ func (a *app) GetUser(c *gin.Context, login, pwd string) (*model.User, error) {
 	return user, nil
 }
 
-func (a *app) NewRefreshSession(c *gin.Context, newRefreshSession *model.RefreshSession) error {
+func (a *App) NewRefreshSession(c context.Context, newRefreshSession *model.RefreshSession) error {
 	log.Debug().Str("userID", fmt.Sprint(newRefreshSession.UserID)).Msg("app.NewRefreshSession START")
 	var err error
 	defer func() {
@@ -100,7 +100,7 @@ func (a *app) NewRefreshSession(c *gin.Context, newRefreshSession *model.Refresh
 	return nil
 }
 
-func (a *app) GetRefreshSessionByToken(c *gin.Context, refreshToken string) (*model.RefreshSession, error) {
+func (a *App) GetRefreshSessionByToken(c context.Context, refreshToken string) (*model.RefreshSession, error) {
 	refreshSession, err := a.storage.GetRefreshSessionByToken(c, refreshToken)
 	if err != nil {
 		if errors.Is(err, dberr.ErrRefreshSessionIsNotExists) {
