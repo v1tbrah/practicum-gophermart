@@ -10,6 +10,11 @@ import (
 	"practicum-gophermart/internal/model"
 )
 
+const (
+	statusProcessedFromAccrual = "PROCESSED"
+	statusInvalidFromAccrual   = "INVALID"
+)
+
 type orderFromAccrualSystem struct {
 	Order   string  `json:"order"`
 	Status  string  `json:"status"`
@@ -17,11 +22,11 @@ type orderFromAccrualSystem struct {
 }
 
 func (o *orderFromAccrualSystem) isFinal() bool {
-	return o.Status == "PROCESSED" || o.Status == "INVALID"
+	return o.Status == statusProcessedFromAccrual || o.Status == statusInvalidFromAccrual
 }
 
 func (o *orderFromAccrualSystem) isInvalid() bool {
-	return o.Status == "INVALID"
+	return o.Status == statusInvalidFromAccrual
 }
 
 func (a *API) updateOrdersStatus() error {
@@ -41,14 +46,14 @@ func (a *API) updateOrdersStatus() error {
 		return err
 	}
 
-
 	orderStatusesFromAccrualSystem := make([]model.Order, 0, len(ordersWithNonFinalStatuses))
 
+	accrulGetOrderURL := a.app.Config().AccrualGetOrder()
 	for i := 0; i < len(ordersWithNonFinalStatuses); i++ {
 
 		order := ordersWithNonFinalStatuses[i]
 
-		resp, err := a.accrualMngr.R().SetPathParam("number", order.Number).Get(a.app.Config().AccrualGetOrder())
+		resp, err := a.accrualMngr.R().SetPathParam("number", order.Number).Get(accrulGetOrderURL)
 
 		if err != nil {
 			return err

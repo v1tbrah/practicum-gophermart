@@ -41,7 +41,7 @@ func prepareRefreshSessionStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) UpdateRefreshSession(c context.Context, newRefreshSession *model.RefreshSession) error {
+func (p *Pg) UpdateRefreshSession(ctx context.Context, newRefreshSession *model.RefreshSession) error {
 	log.Debug().Str("UserID", fmt.Sprint(newRefreshSession.UserID)).Msg("Pg.UpdateRefreshSession START")
 	var err error
 	defer func() {
@@ -58,12 +58,12 @@ func (p *Pg) UpdateRefreshSession(c context.Context, newRefreshSession *model.Re
 	}
 	defer tx.Rollback()
 
-	_, err = tx.StmtContext(c, p.refreshSessionStmts.stmtDeleteRefreshSession).ExecContext(c, newRefreshSession.UserID)
+	_, err = tx.StmtContext(ctx, p.refreshSessionStmts.stmtDeleteRefreshSession).ExecContext(ctx, newRefreshSession.UserID)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.StmtContext(c, p.refreshSessionStmts.stmtAddRefreshSession).ExecContext(c,
+	_, err = tx.StmtContext(ctx, p.refreshSessionStmts.stmtAddRefreshSession).ExecContext(ctx,
 		newRefreshSession.UserID,
 		newRefreshSession.Token,
 		newRefreshSession.ExpiresIn)

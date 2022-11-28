@@ -34,7 +34,7 @@ func prepareWithdrawalsStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) AddWithdrawal(c context.Context, userID int64, withdraw model.Withdraw) error {
+func (p *Pg) AddWithdrawal(ctx context.Context, userID int64, withdraw model.Withdraw) error {
 	log.Debug().Msg("Pg.AddWithdrawal START")
 	var err error
 	defer func() {
@@ -50,14 +50,14 @@ func (p *Pg) AddWithdrawal(c context.Context, userID int64, withdraw model.Withd
 		return err
 	}
 
-	_, err = tx.StmtContext(c, p.withdrawalsStmts.stmtAddWithdrawal).ExecContext(c, userID, withdraw.Order, withdraw.Sum, withdraw.ProcessedAt)
+	_, err = tx.StmtContext(ctx, p.withdrawalsStmts.stmtAddWithdrawal).ExecContext(ctx, userID, withdraw.Order, withdraw.Sum, withdraw.ProcessedAt)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	var newBalance float64
-	err = tx.StmtContext(c, p.balanceStmts.stmtReduceBalance).QueryRowContext(c, userID, withdraw.Sum).Scan(&newBalance)
+	err = tx.StmtContext(ctx, p.balanceStmts.stmtReduceBalance).QueryRowContext(ctx, userID, withdraw.Sum).Scan(&newBalance)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -75,7 +75,7 @@ func (p *Pg) AddWithdrawal(c context.Context, userID int64, withdraw model.Withd
 	return nil
 }
 
-func (p *Pg) GetWithdrawals(c context.Context, userID int64) ([]model.Withdraw, error) {
+func (p *Pg) GetWithdrawals(ctx context.Context, userID int64) ([]model.Withdraw, error) {
 	log.Debug().Msg("Pg.GetWithdrawals START")
 	var err error
 	defer func() {
@@ -86,7 +86,7 @@ func (p *Pg) GetWithdrawals(c context.Context, userID int64) ([]model.Withdraw, 
 		}
 	}()
 
-	rows, err := p.withdrawalsStmts.stmtGetWithdrawals.QueryContext(c, userID)
+	rows, err := p.withdrawalsStmts.stmtGetWithdrawals.QueryContext(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

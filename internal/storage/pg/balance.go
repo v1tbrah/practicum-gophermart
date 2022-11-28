@@ -39,9 +39,9 @@ func prepareBalanceStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) GetBalance(c context.Context, userID int64) (float64, float64, error) {
+func (p *Pg) GetBalance(ctx context.Context, userID int64) (float64, float64, error) {
 	var balance, withdrawn float64
-	err := p.balanceStmts.stmtGetBalance.QueryRowContext(c, userID).Scan(&balance, &withdrawn)
+	err := p.balanceStmts.stmtGetBalance.QueryRowContext(ctx, userID).Scan(&balance, &withdrawn)
 	if err != nil {
 		return -1, -1, err
 	}

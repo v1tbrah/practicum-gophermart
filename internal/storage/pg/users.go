@@ -43,7 +43,7 @@ func prepareUserStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) AddUser(c context.Context, user *model.User) (int64, error) {
+func (p *Pg) AddUser(ctx context.Context, user *model.User) (int64, error) {
 	log.Debug().Str("user", user.String()).Msg("Pg.AddUser START")
 	var err error
 	defer func() {
@@ -61,7 +61,7 @@ func (p *Pg) AddUser(c context.Context, user *model.User) (int64, error) {
 	defer tx.Rollback()
 
 	var id int64
-	err = tx.StmtContext(c, p.usersStmts.stmtAddUser).QueryRowContext(c, user.Login, user.Password).Scan(&id)
+	err = tx.StmtContext(ctx, p.usersStmts.stmtAddUser).QueryRowContext(ctx, user.Login, user.Password).Scan(&id)
 	if err != nil {
 		if pgError, ok := err.(*pgconn.PgError); ok &&
 			pgError.Code == pgerrcode.UniqueViolation &&
@@ -71,7 +71,7 @@ func (p *Pg) AddUser(c context.Context, user *model.User) (int64, error) {
 		return 0, err
 	}
 
-	_, err = tx.StmtContext(c, p.balanceStmts.stmtCreateStartingBalance).ExecContext(c, id)
+	_, err = tx.StmtContext(ctx, p.balanceStmts.stmtCreateStartingBalance).ExecContext(ctx, id)
 	if err != nil {
 		return 0, err
 	}

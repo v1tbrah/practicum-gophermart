@@ -54,7 +54,7 @@ func prepareOrdersStmts(ctx context.Context, p *Pg) error {
 	return nil
 }
 
-func (p *Pg) AddOrder(c context.Context, order *model.Order) error {
+func (p *Pg) AddOrder(ctx context.Context, order *model.Order) error {
 	log.Debug().Msg("Pg.AddOrder START")
 	var err error
 	defer func() {
@@ -65,13 +65,13 @@ func (p *Pg) AddOrder(c context.Context, order *model.Order) error {
 		}
 	}()
 
-	_, err = p.ordersStmts.stmtAddOrder.ExecContext(c, order.UserID, order.Number, order.Status, order.Accrual, order.UploadedAt)
+	_, err = p.ordersStmts.stmtAddOrder.ExecContext(ctx, order.UserID, order.Number, order.Status, order.Accrual, order.UploadedAt)
 	if err != nil {
 		if pgError, ok := err.(*pgconn.PgError); ok &&
 			pgerrcode.IsIntegrityConstraintViolation(pgError.Code) &&
 			pgError.ConstraintName == "orders_number_key" {
 
-			existingOrder, errGetOrder := p.GetOrder(c, order.Number)
+			existingOrder, errGetOrder := p.GetOrder(ctx, order.Number)
 			if errGetOrder != nil {
 				return fmt.Errorf(`pg: %w`, errGetOrder)
 			}
@@ -87,7 +87,7 @@ func (p *Pg) AddOrder(c context.Context, order *model.Order) error {
 	return nil
 }
 
-func (p *Pg) GetOrdersByUser(c context.Context, userID int64) ([]model.Order, error) {
+func (p *Pg) GetOrdersByUser(ctx context.Context, userID int64) ([]model.Order, error) {
 	log.Debug().Msg("Pg.GetOrdersByUser START")
 	var err error
 	defer func() {
@@ -98,7 +98,7 @@ func (p *Pg) GetOrdersByUser(c context.Context, userID int64) ([]model.Order, er
 		}
 	}()
 
-	rows, err := p.ordersStmts.stmtGetUserOrders.QueryContext(c, userID)
+	rows, err := p.ordersStmts.stmtGetUserOrders.QueryContext(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf(`pg: %w`, err)
 	}
@@ -118,7 +118,7 @@ func (p *Pg) GetOrdersByUser(c context.Context, userID int64) ([]model.Order, er
 	return orders, nil
 }
 
-func (p *Pg) GetOrder(c context.Context, number string) (*model.Order, error) {
+func (p *Pg) GetOrder(ctx context.Context, number string) (*model.Order, error) {
 	log.Debug().Msg("Pg.GetOrder START")
 	var err error
 	defer func() {
@@ -130,7 +130,7 @@ func (p *Pg) GetOrder(c context.Context, number string) (*model.Order, error) {
 	}()
 
 	var order model.Order
-	err = p.ordersStmts.stmtGetOrder.QueryRowContext(c, number).
+	err = p.ordersStmts.stmtGetOrder.QueryRowContext(ctx, number).
 		Scan(&order.UserID, &order.Number, &order.Status, &order.Accrual, &order.UploadedAt)
 
 	if err != nil {
