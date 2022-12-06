@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS refreshSessions
     id           bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id      bigint REFERENCES users(id) ON DELETE CASCADE,
     refreshToken uuid NOT NULL,
-    expiresIn    bigint NOT NULL
+    expiresIn    timestamp NOT NULL
 );
 `
 

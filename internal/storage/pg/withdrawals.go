@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/rs/zerolog/log"
 
@@ -106,4 +107,17 @@ func (p *Pg) GetWithdrawals(ctx context.Context, userID int64) ([]model.Withdraw
 	}
 
 	return withdrawals, nil
+}
+
+func (w *withdrawalsStmts) Close() (err error) {
+
+	if err = w.stmtAddWithdrawal.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'AddWithdrawal' : %w", err)
+	}
+
+	if err = w.stmtGetWithdrawals.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetWithdrawals' : %w", err)
+	}
+
+	return nil
 }

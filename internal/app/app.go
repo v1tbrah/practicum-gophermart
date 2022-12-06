@@ -23,27 +23,20 @@ type App struct {
 }
 
 // New returns new App.
-func New(storage storage.Storage, cfg *config.Config) (*App, error) {
+func New(storage storage.Storage, cfg *config.Config) (newApp *App, err error) {
 	log.Debug().Str("cfg", cfg.String()).Msg("app.New started")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.New ended")
-		} else {
-			log.Debug().Msg("app.New ended")
-		}
+		logMethodEnd("app.New", err)
 	}()
 
 	if cfg == nil {
-		err = ErrEmptyConfig
-		return nil, err
+		return nil, ErrEmptyConfig
 	}
 	if storage == nil {
-		err = ErrEmptyStorage
-		return nil, err
+		return nil, ErrEmptyStorage
 	}
 
-	newApp := &App{
+	newApp = &App{
 		storage: storage,
 		cfg:     cfg,
 		pwdMngr: newPwdMngr(bcrypt.DefaultCost),
@@ -58,4 +51,13 @@ func (a *App) Config() *config.Config {
 
 func (a *App) CloseStorage() error {
 	return a.storage.Close()
+}
+
+func logMethodEnd(method string, err error) {
+	msg := method + " END"
+	if err != nil {
+		log.Error().Err(err).Msg(msg)
+	} else {
+		log.Debug().Msg(msg)
+	}
 }

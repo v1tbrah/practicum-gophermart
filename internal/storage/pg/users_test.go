@@ -8,14 +8,12 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
-
-	"practicum-gophermart/internal/model"
-
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
+	"practicum-gophermart/internal/model"
 	dberr "practicum-gophermart/internal/storage/errors"
 )
 

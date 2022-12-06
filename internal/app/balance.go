@@ -12,18 +12,13 @@ import (
 
 var ErrInsufficientFunds = errors.New("there are not enough funds in the account")
 
-func (a *App) GetBalance(c context.Context, userID int64) (float64, float64, error) {
+func (a *App) GetBalance(c context.Context, userID int64) (balance float64, withdrawn float64, err error) {
 	log.Debug().Msg("app.GetBalance START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.GetBalance END")
-		} else {
-			log.Debug().Msg("app.GetBalance END")
-		}
+		logMethodEnd("app.GetBalance", err)
 	}()
 
-	balance, withdrawn, err := a.storage.GetBalance(c, userID)
+	balance, withdrawn, err = a.storage.GetBalance(c, userID)
 	if err != nil {
 		return -1, -1, err
 	}
@@ -31,15 +26,10 @@ func (a *App) GetBalance(c context.Context, userID int64) (float64, float64, err
 	return balance, withdrawn, nil
 }
 
-func (a *App) WithdrawFromBalance(c context.Context, userID int64, withdraw model.Withdraw) error {
+func (a *App) WithdrawFromBalance(c context.Context, userID int64, withdraw model.Withdraw) (err error) {
 	log.Debug().Msg("app.WithdrawFromBalance START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.WithdrawFromBalance END")
-		} else {
-			log.Debug().Msg("app.WithdrawFromBalance END")
-		}
+		logMethodEnd("app.WithdrawFromBalance", err)
 	}()
 
 	err = a.storage.AddWithdrawal(c, userID, withdraw)
@@ -53,18 +43,13 @@ func (a *App) WithdrawFromBalance(c context.Context, userID int64, withdraw mode
 	return nil
 }
 
-func (a *App) GetWithdrawals(c context.Context, userID int64) ([]model.Withdraw, error) {
+func (a *App) GetWithdrawals(c context.Context, userID int64) (withdrawals []model.Withdraw, err error) {
 	log.Debug().Msg("app.GetWithdrawals START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.GetWithdrawals END")
-		} else {
-			log.Debug().Msg("app.GetWithdrawals END")
-		}
+		logMethodEnd("app.WithdrawFromBalance", err)
 	}()
 
-	withdrawals, err := a.storage.GetWithdrawals(c, userID)
+	withdrawals, err = a.storage.GetWithdrawals(c, userID)
 	if err != nil {
 		return nil, err
 	}

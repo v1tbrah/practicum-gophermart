@@ -16,15 +16,10 @@ var (
 	ErrOrderWasUploadedByAnotherUser = errors.New("the order was uploaded by another user")
 )
 
-func (a *App) AddOrder(c context.Context, order *model.Order) error {
+func (a *App) AddOrder(c context.Context, order *model.Order) (err error) {
 	log.Debug().Str("order_number", order.Number).Msg("app.AddOrder START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.AddOrder END")
-		} else {
-			log.Debug().Msg("app.AddOrder END")
-		}
+		logMethodEnd("app.AddOrder", err)
 	}()
 
 	err = a.storage.AddOrder(c, order)
@@ -39,36 +34,27 @@ func (a *App) AddOrder(c context.Context, order *model.Order) error {
 	return nil
 }
 
-func (a *App) GetOrdersByUser(c context.Context, userID int64) ([]model.Order, error) {
+func (a *App) GetOrdersByUser(c context.Context, userID int64) (orders []model.Order, err error) {
 	log.Debug().Str("userID", fmt.Sprint(userID)).Msg("app.GetOrdersByUser START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.GetOrdersByUser END")
-		} else {
-			log.Debug().Msg("app.GetOrdersByUser END")
-		}
+		logMethodEnd("app.GetOrdersByUser", err)
 	}()
 
-	orders, err := a.storage.GetOrdersByUser(c, userID)
+	orders, err = a.storage.GetOrdersByUser(c, userID)
 	if err != nil {
 		return nil, err
 	}
+
 	return orders, nil
 }
 
-func (a *App) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
+func (a *App) GetOrdersByStatuses(statuses []string) (orders []model.Order, err error) {
 	log.Debug().Msg("app.GetOrdersByStatuses START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.GetOrdersByStatuses END")
-		} else {
-			log.Debug().Msg("app.GetOrdersByStatuses END")
-		}
+		logMethodEnd("app.GetOrdersByStatuses", err)
 	}()
 
-	orders, err := a.storage.GetOrdersByStatuses(statuses)
+	orders, err = a.storage.GetOrdersByStatuses(statuses)
 	if err != nil {
 		return nil, err
 	}
@@ -76,16 +62,12 @@ func (a *App) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
 	return orders, nil
 }
 
-func (a *App) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
+func (a *App) UpdateOrderStatuses(newOrderStatuses []model.Order) (err error) {
 	log.Debug().Msg("app.UpdateOrderStatuses START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.UpdateOrderStatuses END")
-		} else {
-			log.Debug().Msg("app.UpdateOrderStatuses END")
-		}
+		logMethodEnd("app.UpdateOrderStatuses", err)
 	}()
+
 	if err = a.storage.UpdateOrderStatuses(newOrderStatuses); err != nil {
 		return err
 	}

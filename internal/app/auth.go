@@ -18,15 +18,10 @@ var (
 	ErrRefreshSessionIsNotExist = errors.New("refresh session is not exists")
 )
 
-func (a *App) CreateUser(c context.Context, user *model.User) (int64, error) {
+func (a *App) CreateUser(c context.Context, user *model.User) (id int64, err error) {
 	log.Debug().Msg("app.CreateUser START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.CreateUser END")
-		} else {
-			log.Debug().Msg("app.CreateUser END")
-		}
+		logMethodEnd("app.CreateUser", err)
 	}()
 
 	hash, err := a.pwdMngr.hash([]byte(user.Password))
@@ -35,7 +30,7 @@ func (a *App) CreateUser(c context.Context, user *model.User) (int64, error) {
 	}
 	user.Password = string(hash)
 
-	id, err := a.storage.AddUser(c, user)
+	id, err = a.storage.AddUser(c, user)
 	if err != nil {
 		if errors.Is(err, dberr.ErrLoginAlreadyExists) {
 			return 0, fmt.Errorf(`app: %w: %s`, ErrUserAlreadyExists, err)
@@ -46,15 +41,10 @@ func (a *App) CreateUser(c context.Context, user *model.User) (int64, error) {
 	return id, nil
 }
 
-func (a *App) GetUser(c context.Context, login, pwd string) (*model.User, error) {
+func (a *App) GetUser(c context.Context, login, pwd string) (user *model.User, err error) {
 	log.Debug().Msg("app.GetUser START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.GetUser END")
-		} else {
-			log.Debug().Msg("app.GetUser END")
-		}
+		logMethodEnd("app.GetUser", err)
 	}()
 
 	currHashedPwd, err := a.storage.GetUserPassword(c, login)
@@ -73,7 +63,7 @@ func (a *App) GetUser(c context.Context, login, pwd string) (*model.User, error)
 		return nil, err
 	}
 
-	user, err := a.storage.GetUser(c, login, currHashedPwd)
+	user, err = a.storage.GetUser(c, login, currHashedPwd)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +71,10 @@ func (a *App) GetUser(c context.Context, login, pwd string) (*model.User, error)
 	return user, nil
 }
 
-func (a *App) NewRefreshSession(c context.Context, newRefreshSession *model.RefreshSession) error {
+func (a *App) NewRefreshSession(c context.Context, newRefreshSession *model.RefreshSession) (err error) {
 	log.Debug().Str("userID", fmt.Sprint(newRefreshSession.UserID)).Msg("app.NewRefreshSession START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("app.NewRefreshSession END")
-		} else {
-			log.Debug().Msg("app.NewRefreshSession END")
-		}
+		logMethodEnd("app.NewRefreshSession", err)
 	}()
 
 	err = a.storage.UpdateRefreshSession(c, newRefreshSession)
@@ -100,8 +85,13 @@ func (a *App) NewRefreshSession(c context.Context, newRefreshSession *model.Refr
 	return nil
 }
 
-func (a *App) GetRefreshSessionByToken(c context.Context, refreshToken string) (*model.RefreshSession, error) {
-	refreshSession, err := a.storage.GetRefreshSessionByToken(c, refreshToken)
+func (a *App) GetRefreshSessionByToken(c context.Context, refreshToken string) (refreshSession *model.RefreshSession, err error) {
+	log.Debug().Msg("app.GetRefreshSessionByToken START")
+	defer func() {
+		logMethodEnd("app.GetRefreshSessionByToken", err)
+	}()
+
+	refreshSession, err = a.storage.GetRefreshSessionByToken(c, refreshToken)
 	if err != nil {
 		if errors.Is(err, dberr.ErrRefreshSessionIsNotExists) {
 			return nil, ErrRefreshSessionIsNotExist

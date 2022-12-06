@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
@@ -59,7 +60,7 @@ func TestPg_UpdateRefreshSession(t *testing.T) {
 			refreshSession: &model.RefreshSession{
 				UserID:    1,
 				Token:     "2",
-				ExpiresIn: 3,
+				ExpiresIn: time.Time{},
 			},
 		},
 		{
@@ -71,7 +72,7 @@ func TestPg_UpdateRefreshSession(t *testing.T) {
 			refreshSession: &model.RefreshSession{
 				UserID:    1,
 				Token:     "2",
-				ExpiresIn: 3,
+				ExpiresIn: time.Time{},
 			},
 			err:     errors.New("unexpected err"),
 			wantErr: true,
@@ -88,7 +89,7 @@ func TestPg_UpdateRefreshSession(t *testing.T) {
 			refreshSession: &model.RefreshSession{
 				UserID:    1,
 				Token:     "2",
-				ExpiresIn: 3,
+				ExpiresIn: time.Time{},
 			},
 			err:     errors.New("unexpected err"),
 			wantErr: true,
@@ -108,7 +109,7 @@ func TestPg_UpdateRefreshSession(t *testing.T) {
 			refreshSession: &model.RefreshSession{
 				UserID:    1,
 				Token:     "2",
-				ExpiresIn: 3,
+				ExpiresIn: time.Time{},
 			},
 			err:     errors.New("unexpected err"),
 			wantErr: true,
@@ -162,11 +163,11 @@ func TestPg_GetRefreshSessionByToken(t *testing.T) {
 			mockBehavior: func(token string) {
 				mock.ExpectQuery(queryGetRefreshSessionByToken).
 					WithArgs(token).
-					WillReturnRows(sqlmock.NewRows([]string{"user_id", "expiresIn"}).AddRow(1, 2))
+					WillReturnRows(sqlmock.NewRows([]string{"user_id", "expiresIn"}).AddRow(1, time.Time{}))
 			},
 			expected: &model.RefreshSession{
 				UserID:    1,
-				ExpiresIn: 2,
+				ExpiresIn: time.Time{},
 			},
 		},
 		{
@@ -178,7 +179,7 @@ func TestPg_GetRefreshSessionByToken(t *testing.T) {
 			},
 			expected: &model.RefreshSession{
 				UserID:    1,
-				ExpiresIn: 2,
+				ExpiresIn: time.Time{},
 			},
 			err:     dberr.ErrRefreshSessionIsNotExists,
 			wantErr: true,
@@ -192,7 +193,7 @@ func TestPg_GetRefreshSessionByToken(t *testing.T) {
 			},
 			expected: &model.RefreshSession{
 				UserID:    1,
-				ExpiresIn: 2,
+				ExpiresIn: time.Time{},
 			},
 			err:     errors.New("unexpected err"),
 			wantErr: true,

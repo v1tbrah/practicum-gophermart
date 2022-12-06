@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"fmt"
 )
 
 type balanceStmts struct {
@@ -46,4 +47,25 @@ func (p *Pg) GetBalance(ctx context.Context, userID int64) (float64, float64, er
 		return -1, -1, err
 	}
 	return balance, withdrawn, nil
+}
+
+func (b *balanceStmts) Close() (err error) {
+
+	if err = b.stmtCreateStartingBalance.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'CreateStartingBalance' : %w", err)
+	}
+
+	if err = b.stmtGetBalance.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetBalance' : %w", err)
+	}
+
+	if err = b.stmtIncreaseBalance.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'IncreaseBalance' : %w", err)
+	}
+
+	if err = b.stmtReduceBalance.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'ReduceBalance' : %w", err)
+	}
+
+	return nil
 }

@@ -28,28 +28,29 @@ func newAuthMngr() *authMngr {
 	return &authMngr{jwtMngr: newJwtMngr("", time.Second*0, time.Second*0)}
 }
 
-func (a *authMngr) newAccessAndRefreshTokens(id int64) (accessToken string, refreshToken string, refreshExpiresIn int64, err error) {
+func (a *authMngr) newAccessAndRefreshTokens(id int64) (accessToken string, refreshToken string, refreshExpiresIn time.Time, err error) {
 	log.Debug().Str("id", fmt.Sprint(id)).Msg("authMngr.newAccessAndRefreshTokens START")
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("authMngr.newAccessAndRefreshTokens END")
-		} else {
-			log.Debug().Msg("authMngr.newAccessAndRefreshTokens END")
-		}
+		logMethodEnd("authMngr.newAccessAndRefreshTokens", err)
 	}()
 
 	accessToken, err = a.jwtMngr.newAccessToken(id)
 	if err != nil {
-		return "", "", 0, err
+		return "", "", time.Time{}, err
 	}
 	refreshToken = a.jwtMngr.newRefreshToken()
 
-	refreshExpiresIn = time.Now().Add(a.jwtMngr.refreshTokenTTL).Unix()
+	refreshExpiresIn = time.Now().Add(a.jwtMngr.refreshTokenTTL)
 
 	return accessToken, refreshToken, refreshExpiresIn, nil
 }
 
-func (a *authMngr) getIDFromAuthHeader(c *gin.Context) (int64, error) {
+func (a *authMngr) getIDFromAuthHeader(c *gin.Context) (id int64, err error) {
+	log.Debug().Msg("authMngr.getIDFromAuthHeader START")
+	defer func() {
+		logMethodEnd("authMngr.getIDFromAuthHeader", err)
+	}()
+
 	authHeader := c.GetHeader("Authorization")
 	if len(authHeader) == 0 {
 		return 0, errEmptyAuthHeader
@@ -61,20 +62,25 @@ func (a *authMngr) getIDFromAuthHeader(c *gin.Context) (int64, error) {
 	}
 
 	accessToken := headerParts[1]
-	id, err := a.jwtMngr.getID(accessToken)
+	id, err = a.jwtMngr.getID(accessToken)
 	if err != nil {
 		return 0, err
 	}
+
 	return id, nil
 }
 
-func (a *authMngr) getID(c *gin.Context) (int64, error) {
+func (a *authMngr) getID(c *gin.Context) (userID int64, err error) {
+	log.Debug().Msg("authMngr.getID START")
+	defer func() {
+		logMethodEnd("authMngr.getID", err)
+	}()
+
 	id, ok := c.Get("id")
 	if !ok {
 		return 0, errUserIDNotFound
 	}
 
-	var userID int64
 	if userID, ok = id.(int64); !ok {
 		return 0, errUnexpectedUserIDType
 	}
@@ -82,5 +88,8 @@ func (a *authMngr) getID(c *gin.Context) (int64, error) {
 }
 
 func (a *authMngr) setID(c *gin.Context, id int64) {
+	log.Debug().Msg("authMngr.setID START")
+	defer log.Debug().Msg("authMngr.setID END")
+
 	c.Set("id", id)
 }

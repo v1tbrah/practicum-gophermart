@@ -207,3 +207,28 @@ func (p *Pg) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
 
 	return nil
 }
+
+func (o *ordersStmts) Close() (err error) {
+
+	if err = o.stmtAddOrder.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'AddOrder' : %w", err)
+	}
+
+	if err = o.stmtGetOrder.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetOrder' : %w", err)
+	}
+
+	if err = o.stmtGetUserOrders.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetUserOrders ' : %w", err)
+	}
+
+	if err = o.stmtGetOrdersByStatuses.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetOrdersByStatuses ' : %w", err)
+	}
+
+	if err = o.stmtUpdateOrderStatus.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'UpdateOrderStatus ' : %w", err)
+	}
+
+	return nil
+}

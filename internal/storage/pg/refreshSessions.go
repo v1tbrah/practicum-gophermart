@@ -101,3 +101,20 @@ func (p *Pg) GetRefreshSessionByToken(c context.Context, token string) (*model.R
 
 	return &refreshSession, nil
 }
+
+func (r *refreshSessionStmts) Close() (err error) {
+
+	if err = r.stmtAddRefreshSession.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'AddRefreshSession' : %w", err)
+	}
+
+	if err = r.stmtDeleteRefreshSession.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'DeleteRefreshSession' : %w", err)
+	}
+
+	if err = r.stmtGetRefreshSessionByToken.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetRefreshSessionByToken' : %w", err)
+	}
+
+	return nil
+}

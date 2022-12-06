@@ -50,7 +50,7 @@ func (a *API) signUpHandler(c *gin.Context) {
 	}
 
 	c.Header("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	c.SetCookie("refreshToken", newRefreshSession.Token, int(newRefreshSession.ExpiresIn), "/api", "", true, true)
+	c.SetCookie("refreshToken", newRefreshSession.Token, int(newRefreshSession.ExpiresIn.Unix()), "/api", "", true, true)
 
 	a.respond(c, http.StatusOK, map[string]string{"accessToken": accessToken, "refreshToken": newRefreshSession.Token})
 }
@@ -89,12 +89,14 @@ func (a *API) signInHandler(c *gin.Context) {
 	}
 
 	c.Header("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	c.SetCookie("refreshToken", newRefreshSession.Token, int(newRefreshSession.ExpiresIn), "/api", "", true, true)
+	c.SetCookie("refreshToken", newRefreshSession.Token, int(newRefreshSession.ExpiresIn.Unix()), "/api", "", true, true)
 
 	a.respond(c, http.StatusOK, map[string]string{"accessToken": accessToken, "refreshToken": newRefreshSession.Token})
 }
 
 func (a *API) checkAuthMiddleware(c *gin.Context) {
+	log.Debug().Msg("api.checkAuthMiddleware started")
+	defer log.Debug().Msg("api.checkAuthMiddleware ended")
 
 	id, err := a.authMngr.getIDFromAuthHeader(c)
 	if err != nil {
@@ -112,7 +114,7 @@ func (a *API) checkAuthMiddleware(c *gin.Context) {
 				return
 			}
 
-			if refreshTokenIsExpired := refreshSession.ExpiresIn < time.Now().Unix(); refreshTokenIsExpired {
+			if refreshTokenIsExpired := refreshSession.ExpiresIn.Before(time.Now()); refreshTokenIsExpired {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
 					"access token error":  errAccessTokenIsExpired.Error(),
 					"refresh token error": errRefreshTokenIsExpired.Error(),
@@ -134,7 +136,7 @@ func (a *API) checkAuthMiddleware(c *gin.Context) {
 			}
 
 			c.Header("Authorization", fmt.Sprintf("Bearer %s", newAccessToken))
-			c.SetCookie("refreshToken", newRefreshToken, int(newRefreshExpiresIn), "/api", "", true, true)
+			c.SetCookie("refreshToken", newRefreshToken, int(newRefreshExpiresIn.Unix()), "/api", "", true, true)
 
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())

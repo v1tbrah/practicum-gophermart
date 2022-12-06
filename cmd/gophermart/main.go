@@ -11,17 +11,13 @@ import (
 	"practicum-gophermart/internal/storage"
 )
 
-func setGlobalLogLevel(lvl zerolog.Level) {
-	zerolog.SetGlobalLevel(lvl)
-}
-
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	cfgOptions := []string{config.WithFlag, config.WithEnv}
 	newCfg, err := config.New(cfgOptions...)
 	if err != nil {
-		log.Fatal().Err(err).Str("cfg options", cfgOptions[0]+", "+cfgOptions[1]).Msg("creating new config")
+		log.Fatal().Err(err).Strs("cfg options", cfgOptions).Msg("creating new config")
 	}
 
 	logLevel, err := zerolog.ParseLevel(newCfg.LogLevel())
@@ -48,8 +44,6 @@ func main() {
 	}
 	log.Info().Msg("API created")
 
-	if err = newAPI.Run(); err != nil {
-		log.Fatal().Err(err).Msg("running api")
-	}
+	newAPI.Run()
 
 }

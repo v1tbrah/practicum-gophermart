@@ -6,6 +6,9 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,18 +27,13 @@ type API struct {
 }
 
 // New returns new API.
-func New(application Application) (*API, error) {
+func New(application Application) (newAPI *API, err error) {
 	log.Debug().Msg("api.New started")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("api.New ended")
-		} else {
-			log.Debug().Msg("api.New ended")
-		}
+		logMethodEnd("api.New", err)
 	}()
 
-	newAPI := &API{}
+	newAPI = &API{}
 
 	newAPI.authMngr = newAuthMngr()
 
@@ -86,70 +84,85 @@ func (a *API) newRouter() *gin.Engine {
 }
 
 // Run API starts the API.
-func (a *API) Run() error {
+func (a *API) Run() {
 	log.Debug().Msg("api.Run started")
 	defer log.Debug().Msg("api.Run ended")
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	errG, ctx := errgroup.WithContext(context.Background())
 
 	errG.Go(func() error {
-		return a.startListener(ctx)
+		return a.startListener(ctx, shutdown)
 	})
 
 	errG.Go(func() error {
-		return a.startUpdatingOrdersStatus(ctx)
+		return a.startUpdatingOrdersStatus(ctx, shutdown)
 	})
 
 	if err := errG.Wait(); err != nil {
-		if errCloser := a.app.CloseStorage(); errCloser != nil {
-			return errCloser
+		log.Error().Err(err).Msg(err.Error())
+		_, ok := <-shutdown
+		if ok {
+			close(shutdown)
 		}
-		return err
 	}
 
+	<-shutdown
 	if err := a.app.CloseStorage(); err != nil {
-		return err
+		log.Err(err).Msg("storage closing")
+	} else {
+		log.Info().Msg("storage closed")
 	}
-
-	return nil
+	if err := a.serv.Shutdown(context.Background()); err != nil {
+		log.Err(err).Msg("HTTP server shutdown")
+	} else {
+		log.Info().Msg("HTTP server gracefully shutdown")
+	}
 
 }
 
-func (a *API) startListener(ctx context.Context) (err error) {
+func (a *API) startListener(ctx context.Context, shutdown chan os.Signal) (err error) {
 	log.Debug().Msg("api.startListener started")
-	defer log.Debug().Msg("api.startListener ended")
+	defer func() {
+		logMethodEnd("api.startListener", err)
+	}()
 
-	c := make(chan struct{})
+	ended := make(chan struct{})
 
 	go func() {
 		select {
 		case <-ctx.Done():
-			return
+		case _, ok := <-shutdown:
+			if ok {
+				close(shutdown)
+			}
 		default:
 			defer a.serv.Close()
 			log.Info().Str("addr", a.serv.Addr).Msg("starting http server")
 			err = a.serv.ListenAndServe()
-			c <- struct{}{}
+			ended <- struct{}{}
 		}
 	}()
 
 	select {
 	case <-ctx.Done():
-		return nil
-	case <-c:
-		return err
+	case <-ended:
+	case _, ok := <-shutdown:
+		if ok {
+			close(shutdown)
+		}
 	}
+
+	return err
 
 }
 
-func (a *API) startUpdatingOrdersStatus(ctx context.Context) (err error) {
+func (a *API) startUpdatingOrdersStatus(ctx context.Context, shutdown chan os.Signal) (err error) {
 	log.Debug().Msg("api.startUpdatingOrdersStatus started")
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("api.startUpdatingOrdersStatus ended")
-		} else {
-			log.Debug().Msg("api.startUpdatingOrdersStatus ended")
-		}
+		logMethodEnd("api.startUpdatingOrdersStatus", err)
 	}()
 
 	interval := a.app.Config().OrderStatusUpdateInterval()
@@ -168,7 +181,21 @@ func (a *API) startUpdatingOrdersStatus(ctx context.Context) (err error) {
 			if err != nil {
 				return err
 			}
+		case _, ok := <-shutdown:
+			if ok {
+				close(shutdown)
+			}
+			return nil
 		}
 	}
 
+}
+
+func logMethodEnd(method string, err error) {
+	msg := method + " END"
+	if err != nil {
+		log.Error().Err(err).Msg(msg)
+	} else {
+		log.Debug().Msg(msg)
+	}
 }

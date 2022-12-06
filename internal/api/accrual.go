@@ -10,34 +10,31 @@ import (
 	"practicum-gophermart/internal/model"
 )
 
+type accrualOrderStatus string
+
 const (
-	statusProcessedFromAccrual = "PROCESSED"
-	statusInvalidFromAccrual   = "INVALID"
+	statusProcessedFromAccrual accrualOrderStatus = "PROCESSED"
+	statusInvalidFromAccrual   accrualOrderStatus = "INVALID"
 )
 
 type orderFromAccrualSystem struct {
-	Order   string  `json:"order"`
-	Status  string  `json:"status"`
-	Accrual float64 `json:"accrual"`
+	Order   string             `json:"order"`
+	Status  accrualOrderStatus `json:"status"`
+	Accrual float64            `json:"accrual"`
 }
 
-func (o *orderFromAccrualSystem) isFinal() bool {
-	return o.Status == statusProcessedFromAccrual || o.Status == statusInvalidFromAccrual
+func (s accrualOrderStatus) isFinal() bool {
+	return s == statusProcessedFromAccrual || s == statusInvalidFromAccrual
 }
 
-func (o *orderFromAccrualSystem) isInvalid() bool {
-	return o.Status == statusInvalidFromAccrual
+func (s accrualOrderStatus) isInvalid() bool {
+	return s == statusInvalidFromAccrual
 }
 
-func (a *API) updateOrdersStatus() error {
+func (a *API) updateOrdersStatus() (err error) {
 	log.Debug().Msg("api.updateOrdersStatus START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("api.updateOrdersStatus END")
-		} else {
-			log.Debug().Msg("api.updateOrdersStatus END")
-		}
+		logMethodEnd("api.updateOrdersStatus", err)
 	}()
 
 	nonFinalStatuses := []string{model.OrderStatusNew.String(), model.OrderStatusProcessing.String()}
@@ -75,11 +72,11 @@ func (a *API) updateOrdersStatus() error {
 			return err
 		}
 
-		if !newOrderFromAccrualSystem.isFinal() {
+		if !newOrderFromAccrualSystem.Status.isFinal() {
 			continue
 		}
 
-		if newOrderFromAccrualSystem.isInvalid() {
+		if newOrderFromAccrualSystem.Status.isInvalid() {
 			newOrderFromAccrualSystem.Accrual = 0.0
 		}
 
@@ -87,7 +84,7 @@ func (a *API) updateOrdersStatus() error {
 			model.Order{
 				UserID:  order.UserID,
 				Number:  newOrderFromAccrualSystem.Order,
-				Status:  newOrderFromAccrualSystem.Status,
+				Status:  string(newOrderFromAccrualSystem.Status),
 				Accrual: newOrderFromAccrualSystem.Accrual,
 			})
 

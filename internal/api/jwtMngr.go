@@ -22,6 +22,9 @@ type jwtMngr struct {
 }
 
 func newJwtMngr(signingKey string, accessTokenTTL, refreshTokenTTL time.Duration) *jwtMngr {
+	log.Debug().Msg("api.newJwtMngr START")
+	defer log.Debug().Msg("api.newJwtMngr END")
+
 	if signingKey == "" {
 		signingKey = "6Q7TibVvx32RBzMU4j3I5hIKMY2A2azi"
 	}
@@ -39,15 +42,10 @@ type tokenClaims struct {
 	ID int64 `json:"id"`
 }
 
-func (j *jwtMngr) newAccessToken(id int64) (string, error) {
+func (j *jwtMngr) newAccessToken(id int64) (accessToken string, err error) {
 	log.Debug().Msg("jwtMngr.newAccessToken START")
-	var err error
 	defer func() {
-		if err != nil {
-			log.Error().Err(err).Msg("jwtMngr.newAccessToken END")
-		} else {
-			log.Debug().Msg("jwtMngr.newAccessToken END")
-		}
+		logMethodEnd("jwtMngr.newAccessToken", err)
 	}()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
@@ -60,12 +58,12 @@ func (j *jwtMngr) newAccessToken(id int64) (string, error) {
 		},
 	)
 
-	signedToken, err := token.SignedString([]byte(j.signingKey))
+	accessToken, err = token.SignedString([]byte(j.signingKey))
 	if err != nil {
 		return "", err
 	}
 
-	return signedToken, nil
+	return accessToken, nil
 }
 
 func (j *jwtMngr) newRefreshToken() string {
@@ -75,7 +73,11 @@ func (j *jwtMngr) newRefreshToken() string {
 	return uuid.New().String()
 }
 
-func (j *jwtMngr) getID(accessToken string) (int64, error) {
+func (j *jwtMngr) getID(accessToken string) (userID int64, err error) {
+	log.Debug().Msg("jwtMngr.getID START")
+	defer func() {
+		logMethodEnd("jwtMngr.getID", err)
+	}()
 
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

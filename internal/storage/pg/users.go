@@ -127,3 +127,20 @@ func (p *Pg) GetUserPassword(c context.Context, login string) (string, error) {
 	}
 	return password, nil
 }
+
+func (u *usersStmts) Close() (err error) {
+
+	if err = u.stmtAddUser.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'AddUser' : %w", err)
+	}
+
+	if err = u.stmtGetUser.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetUser' : %w", err)
+	}
+
+	if err = u.stmtGetUserPassword.Close(); err != nil {
+		return fmt.Errorf("closing stmt 'GetUserPassword' : %w", err)
+	}
+
+	return nil
+}

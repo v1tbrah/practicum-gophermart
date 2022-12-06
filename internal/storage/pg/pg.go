@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -85,10 +86,30 @@ func (p *Pg) Close() error {
 		}
 	}()
 
-	err = p.db.Close()
-	if err != nil {
-		return err
+	if err = p.usersStmts.Close(); err != nil {
+		return fmt.Errorf("closing user stmts: %w", err)
 	}
 
-	return err
+	if err = p.ordersStmts.Close(); err != nil {
+		return fmt.Errorf("closing order stmts: %w", err)
+	}
+
+	if err = p.refreshSessionStmts.Close(); err != nil {
+		return fmt.Errorf("closing refresh session stmts: %w", err)
+	}
+
+	if err = p.balanceStmts.Close(); err != nil {
+		return fmt.Errorf("closing balance stmts: %w", err)
+	}
+
+	if err = p.withdrawalsStmts.Close(); err != nil {
+		return fmt.Errorf("closing withdrawals stmts: %w", err)
+	}
+
+	err = p.db.Close()
+	if err != nil {
+		return fmt.Errorf("closing db connection: %w", err)
+	}
+
+	return nil
 }
