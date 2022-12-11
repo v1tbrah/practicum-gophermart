@@ -238,8 +238,8 @@ func (_m *Application) NewRefreshSession(c context.Context, newRefreshSession *m
 	return r0
 }
 
-// UpdateOrderStatuses provides a mock function with given fields: newOrderStatuses
-func (_m *Application) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
+// UpdateOrders provides a mock function with given fields: newOrderStatuses
+func (_m *Application) UpdateOrders(newOrderStatuses []model.Order) error {
 	ret := _m.Called(newOrderStatuses)
 
 	var r0 error

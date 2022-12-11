@@ -16,8 +16,8 @@ var (
 )
 
 type jwtMngr struct {
-	accessTokenTTL  time.Duration
 	signingKey      string
+	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
 }
 

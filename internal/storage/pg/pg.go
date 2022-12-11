@@ -7,11 +7,18 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v4/stdlib" // for use pgx + stdlib
 	"github.com/rs/zerolog/log"
 )
 
 var ErrDBIsNilPointer = errors.New("database is nil pointer")
+
+const (
+	maxOpenConns = 20
+	maxIdleConns = 20
+	maxIdleTime  = time.Second * 30
+	maxLifeTime  = time.Minute * 2
+)
 
 type Pg struct {
 	db                  *sql.DB
@@ -41,10 +48,10 @@ func New(pgConn string) (*Pg, error) {
 	}
 	newPg.db = db
 
-	newPg.db.SetMaxOpenConns(20)
-	newPg.db.SetMaxIdleConns(20)
-	newPg.db.SetConnMaxIdleTime(time.Second * 30)
-	newPg.db.SetConnMaxLifetime(time.Minute * 2)
+	newPg.db.SetMaxOpenConns(maxOpenConns)
+	newPg.db.SetMaxIdleConns(maxIdleConns)
+	newPg.db.SetConnMaxIdleTime(maxIdleTime)
+	newPg.db.SetConnMaxLifetime(maxLifeTime)
 
 	ctx := context.Background()
 

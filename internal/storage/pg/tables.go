@@ -26,7 +26,11 @@ func initTables(ctx context.Context, p *Pg) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if errTxRollback := tx.Rollback(); errTxRollback != nil {
+			log.Error().Err(errTxRollback).Msg("tx rollback")
+		}
+	}()
 
 	_, err = tx.ExecContext(ctx, queryCreateTypeOrderStatus)
 	if err != nil {

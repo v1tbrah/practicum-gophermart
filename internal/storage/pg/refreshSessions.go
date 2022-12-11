@@ -56,7 +56,11 @@ func (p *Pg) UpdateRefreshSession(ctx context.Context, newRefreshSession *model.
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if errTxRollback := tx.Rollback(); errTxRollback != nil {
+			log.Error().Err(errTxRollback).Msg("tx rollback")
+		}
+	}()
 
 	_, err = tx.StmtContext(ctx, p.refreshSessionStmts.stmtDeleteRefreshSession).ExecContext(ctx, newRefreshSession.UserID)
 	if err != nil {

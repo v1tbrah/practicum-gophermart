@@ -3,9 +3,9 @@ package model
 import "strconv"
 
 type User struct {
-	ID       int64  `json:"id"`
 	Login    string `json:"login" binding:"required"`
 	Password string `json:"password,omitempty" binding:"required"`
+	ID       int64  `json:"id"`
 }
 
 func (u *User) String() string {

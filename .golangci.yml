@@ -1,3 +1,6 @@
+run:
+  skip-files:
+    - "(_test.go)$"
 linters:
   disable-all: true
   enable:
@@ -12,7 +15,6 @@ linters:
     - gocritic
     - gofmt
     - goimports
-    - gomnd
     - gocyclo
     - gosec
     - gosimple
@@ -31,8 +33,6 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    - whitespace
-    - wsl
 
 linters-settings:
   errcheck:
@@ -42,6 +42,8 @@ linters-settings:
     min-occurrences: 2
     match-constant: true
   gocritic:
+    disabled-checks:
+      - sloppyReassign
     enabled-tags:
       - diagnostic
       - style
@@ -49,8 +51,14 @@ linters-settings:
       - experimental
       - opinionated
   govet:
-    check-shadowing: true
     enable-all: true
+    disable:
+      - shadow
+  gosec:
+    excludes:
+      - G101
   nolintlint:
     require-explanation: true
     require-specific: true
+
+

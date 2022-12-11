@@ -50,35 +50,38 @@ func (p *Pg) AddWithdrawal(ctx context.Context, userID int64, withdraw model.Wit
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if errTxRollback := tx.Rollback(); errTxRollback != nil {
+			log.Error().Err(errTxRollback).Msg("tx rollback")
+		}
+	}()
 
 	_, err = tx.StmtContext(ctx, p.withdrawalsStmts.stmtAddWithdrawal).ExecContext(ctx, userID, withdraw.Order, withdraw.Sum, withdraw.ProcessedAt)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	var newBalance float64
 	err = tx.StmtContext(ctx, p.balanceStmts.stmtReduceBalance).QueryRowContext(ctx, userID, withdraw.Sum).Scan(&newBalance)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 	if newBalance < 0 {
-		tx.Rollback()
+		if errTxRollback := tx.Rollback(); errTxRollback != nil {
+			log.Error().Err(errTxRollback).Msg("tx rollback")
+		}
 		return dberr.ErrNegativeBalance
 	}
 
 	if err = tx.Commit(); err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	return nil
 }
 
-func (p *Pg) GetWithdrawals(ctx context.Context, userID int64) ([]model.Withdraw, error) {
+func (p *Pg) GetWithdrawals(ctx context.Context, userID int64) (withdrawals []model.Withdraw, err error) {
 	log.Debug().Msg("Pg.GetWithdrawals START")
-	var err error
 	defer func() {
 		if err != nil {
 			log.Error().Err(err).Msg("Pg.GetWithdrawals END")
@@ -91,9 +94,12 @@ func (p *Pg) GetWithdrawals(ctx context.Context, userID int64) ([]model.Withdraw
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if errRowsClose := rows.Close(); errRowsClose != nil {
+			log.Error().Err(err).Msg("closing sql rows")
+		}
+	}()
 
-	withdrawals := []model.Withdraw{}
 	for rows.Next() {
 		currWithdraw := model.Withdraw{}
 		if err = rows.Scan(&currWithdraw.Order, &currWithdraw.Sum, &currWithdraw.ProcessedAt); err != nil {

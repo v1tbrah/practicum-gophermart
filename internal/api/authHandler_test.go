@@ -19,9 +19,9 @@ import (
 func TestAPI_signUpHandler(t *testing.T) {
 
 	tests := []struct {
+		mockApp      *mocks.Application
 		name         string
 		payload      string
-		mockApp      *mocks.Application
 		expectedCode int
 	}{
 		{
@@ -109,9 +109,9 @@ func TestAPI_signUpHandler(t *testing.T) {
 func TestAPI_signInHandler(t *testing.T) {
 
 	tests := []struct {
+		mockApp      *mocks.Application
 		name         string
 		payload      string
-		mockApp      *mocks.Application
 		expectedCode int
 	}{
 		{

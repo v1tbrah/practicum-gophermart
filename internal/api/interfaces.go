@@ -15,7 +15,7 @@ type Application interface {
 	AddOrder(c context.Context, order *model.Order) error
 	GetOrdersByUser(c context.Context, userID int64) ([]model.Order, error)
 	GetOrdersByStatuses(statuses []string) ([]model.Order, error)
-	UpdateOrderStatuses(newOrderStatuses []model.Order) error
+	UpdateOrders(newOrderStatuses []model.Order) error
 	GetBalance(c context.Context, userID int64) (balance float64, withdrawn float64, err error)
 	WithdrawFromBalance(c context.Context, userID int64, withdraw model.Withdraw) error
 	GetWithdrawals(c context.Context, userID int64) ([]model.Withdraw, error)

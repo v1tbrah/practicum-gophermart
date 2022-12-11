@@ -23,7 +23,7 @@ type App struct {
 }
 
 // New returns new App.
-func New(storage storage.Storage, cfg *config.Config) (newApp *App, err error) {
+func New(thisStorage storage.Storage, cfg *config.Config) (newApp *App, err error) {
 	log.Debug().Str("cfg", cfg.String()).Msg("app.New started")
 	defer func() {
 		logMethodEnd("app.New", err)
@@ -32,12 +32,12 @@ func New(storage storage.Storage, cfg *config.Config) (newApp *App, err error) {
 	if cfg == nil {
 		return nil, ErrEmptyConfig
 	}
-	if storage == nil {
+	if thisStorage == nil {
 		return nil, ErrEmptyStorage
 	}
 
 	newApp = &App{
-		storage: storage,
+		storage: thisStorage,
 		cfg:     cfg,
 		pwdMngr: newPwdMngr(bcrypt.DefaultCost),
 	}
