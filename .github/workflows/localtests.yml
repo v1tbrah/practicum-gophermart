@@ -2,7 +2,23 @@ name: go
 
 on:
   push:
+    branches:
+      - main
+      - master
+      - authHandlers
+      - orderHandlers
+      - balanceHandlers
+      - review-branch
+      - refactoring
   pull_request:
+    branches:
+      - main
+      - master
+      - authHandlers
+      - orderHandlers
+      - balanceHandlers
+      - review-branch
+      - refactoring
 
 jobs:
 

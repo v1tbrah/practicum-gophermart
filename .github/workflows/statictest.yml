@@ -11,6 +11,7 @@ on:
       - orderHandlers
       - balanceHandlers
       - review-branch
+      - refactoring
 
 jobs:
 

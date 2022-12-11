@@ -2,9 +2,22 @@ name: golangci-lint
 on:
   push:
     branches:
-      - master
       - main
+      - master
+      - authHandlers
+      - orderHandlers
+      - balanceHandlers
+      - review-branch
+      - refactoring
   pull_request:
+    branches:
+      - main
+      - master
+      - authHandlers
+      - orderHandlers
+      - balanceHandlers
+      - review-branch
+      - refactoring
 permissions:
   contents: read
 jobs:

@@ -3,6 +3,14 @@ name: gophermart
 on:
   workflow_dispatch:
   pull_request:
+    branches:
+      - main
+      - master
+      - authHandlers
+      - orderHandlers
+      - balanceHandlers
+      - review-branch
+      - refactoring
   push:
     branches:
       - main
@@ -11,6 +19,7 @@ on:
       - orderHandlers
       - balanceHandlers
       - review-branch
+      - refactoring
 
 jobs:
 
