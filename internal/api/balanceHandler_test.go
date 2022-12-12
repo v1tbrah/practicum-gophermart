@@ -18,10 +18,10 @@ import (
 
 func TestAPI_balanceHandler(t *testing.T) {
 	tests := []struct {
-		name         string
 		mockApp      *mocks.Application
-		authorized   bool
+		name         string
 		expectedCode int
+		authorized   bool
 	}{
 		{
 			name: "OK",
@@ -75,11 +75,11 @@ func TestAPI_balanceHandler(t *testing.T) {
 
 func TestAPI_withdrawPointsHandler(t *testing.T) {
 	tests := []struct {
+		mockApp      *mocks.Application
 		name         string
 		payload      string
-		mockApp      *mocks.Application
-		authorized   bool
 		expectedCode int
+		authorized   bool
 	}{
 		{
 			name:    "OK",
@@ -173,10 +173,10 @@ func TestAPI_withdrawPointsHandler(t *testing.T) {
 
 func TestAPI_withdrawnPointsHandler(t *testing.T) {
 	tests := []struct {
-		name         string
 		mockApp      *mocks.Application
-		authorized   bool
+		name         string
 		expectedCode int
+		authorized   bool
 	}{
 		{
 			name: "OK",

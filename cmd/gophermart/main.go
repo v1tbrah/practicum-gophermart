@@ -24,12 +24,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Strs("cfg options", cfgOptions).Msg("parsing log level")
 	}
+
 	zerolog.SetGlobalLevel(logLevel)
 
 	newStorage, err := storage.New(newCfg)
 	if err != nil {
 		log.Fatal().Err(err).Str("config", newCfg.String()).Msg("creating new storage")
 	}
+
 	log.Info().Msg("storage created")
 
 	newApp, err := app.New(newStorage, newCfg)
@@ -45,5 +47,4 @@ func main() {
 	log.Info().Msg("API created")
 
 	newAPI.Run()
-
 }

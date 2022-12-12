@@ -99,50 +99,64 @@ func (a *API) checkAuthMiddleware(c *gin.Context) {
 	defer log.Debug().Msg("api.checkAuthMiddleware ended")
 
 	id, err := a.authMngr.getIDFromAuthHeader(c)
-	if err != nil {
-		if errors.Is(err, errAccessTokenIsExpired) {
 
-			refreshToken, err := c.Cookie("refreshToken")
-			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
-				return
-			}
-
-			refreshSession, err := a.app.GetRefreshSessionByToken(c, refreshToken)
-			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
-				return
-			}
-
-			if refreshTokenIsExpired := refreshSession.ExpiresIn.Before(time.Now()); refreshTokenIsExpired {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
-					"access token error":  errAccessTokenIsExpired.Error(),
-					"refresh token error": errRefreshTokenIsExpired.Error(),
-				})
-				return
-			}
-
-			newAccessToken, newRefreshToken, newRefreshExpiresIn, err := a.authMngr.newAccessAndRefreshTokens(refreshSession.UserID)
-			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
-				return
-			}
-
-			newRefreshSession := model.RefreshSession{UserID: refreshSession.UserID, Token: newRefreshToken, ExpiresIn: newRefreshExpiresIn}
-			err = a.app.NewRefreshSession(c, &newRefreshSession)
-			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"access token error": errAccessTokenIsExpired.Error()})
-				return
-			}
-
-			c.Header("Authorization", fmt.Sprintf("Bearer %s", newAccessToken))
-			c.SetCookie("refreshToken", newRefreshToken, int(newRefreshExpiresIn.Unix()), "/api", "", true, true)
-
-		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
-			return
-		}
+	if err == nil {
+		a.authMngr.setID(c, id)
+		return
 	}
+
+	accessIsAccessTokenIsExpired := errors.Is(err, errAccessTokenIsExpired)
+	if !accessIsAccessTokenIsExpired {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	refreshToken, errGettingRefreshToken := c.Cookie("refreshToken")
+	if errGettingRefreshToken != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
+			"access token error":          errAccessTokenIsExpired.Error(),
+			"getting refresh token error": errGettingRefreshToken.Error(),
+		})
+		return
+	}
+
+	refreshSession, errGettingRefreshSessionByToken := a.app.GetRefreshSessionByToken(c, refreshToken)
+	if errGettingRefreshSessionByToken != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
+			"access token error": errAccessTokenIsExpired.Error(),
+		})
+		log.Error().Err(errGettingRefreshSessionByToken).Msg("getting refresh session by token")
+		return
+	}
+
+	if refreshTokenIsExpired := refreshSession.ExpiresIn.Before(time.Now()); refreshTokenIsExpired {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
+			"access token error":  errAccessTokenIsExpired.Error(),
+			"refresh token error": errRefreshTokenIsExpired.Error(),
+		})
+		return
+	}
+
+	newAccessToken, newRefreshToken, newRefreshExpiresIn, errCreatingNewTokens := a.authMngr.newAccessAndRefreshTokens(refreshSession.UserID)
+	if errCreatingNewTokens != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
+			"access token error": errAccessTokenIsExpired.Error(),
+		})
+		return
+	}
+
+	newRefreshSession := model.RefreshSession{UserID: refreshSession.UserID, Token: newRefreshToken, ExpiresIn: newRefreshExpiresIn}
+	errSavingRefreshSession := a.app.NewRefreshSession(c, &newRefreshSession)
+	if errSavingRefreshSession != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{
+			"access token error": errAccessTokenIsExpired.Error(),
+		})
+		log.Error().Err(errSavingRefreshSession).Msg("getting refresh session by token")
+		return
+	}
+
+	c.Header("Authorization", fmt.Sprintf("Bearer %s", newAccessToken))
+	c.SetCookie("refreshToken", newRefreshToken, int(newRefreshExpiresIn.Unix()), "/api", "", true, true)
 
 	a.authMngr.setID(c, id)
 }

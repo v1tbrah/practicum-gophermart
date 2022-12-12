@@ -28,7 +28,7 @@ func newAuthMngr() *authMngr {
 	return &authMngr{jwtMngr: newJwtMngr("", time.Second*0, time.Second*0)}
 }
 
-func (a *authMngr) newAccessAndRefreshTokens(id int64) (accessToken string, refreshToken string, refreshExpiresIn time.Time, err error) {
+func (a *authMngr) newAccessAndRefreshTokens(id int64) (accessToken, refreshToken string, refreshExpiresIn time.Time, err error) {
 	log.Debug().Str("id", fmt.Sprint(id)).Msg("authMngr.newAccessAndRefreshTokens START")
 	defer func() {
 		logMethodEnd("authMngr.newAccessAndRefreshTokens", err)
@@ -52,7 +52,7 @@ func (a *authMngr) getIDFromAuthHeader(c *gin.Context) (id int64, err error) {
 	}()
 
 	authHeader := c.GetHeader("Authorization")
-	if len(authHeader) == 0 {
+	if authHeader == "" {
 		return 0, errEmptyAuthHeader
 	}
 

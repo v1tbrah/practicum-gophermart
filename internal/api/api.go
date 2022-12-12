@@ -17,6 +17,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const readHeaderTimeout = time.Second * 5
+
 var errInvalidIntervalUpdateOrderStatus = errors.New("invalid order status update interval")
 
 type API struct {
@@ -39,9 +41,12 @@ func New(application Application) (newAPI *API, err error) {
 
 	newAPI.app = application
 
+	config := application.Config()
+
 	newAPI.serv = &http.Server{
-		Addr:    application.Config().ServAPIAddr(),
-		Handler: newAPI.newRouter(),
+		Addr:              config.ServAPIAddr(),
+		Handler:           newAPI.newRouter(),
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	newAPI.accrualMngr = resty.New()
@@ -50,34 +55,27 @@ func New(application Application) (newAPI *API, err error) {
 }
 
 func (a *API) newRouter() *gin.Engine {
+	log.Debug().Msg("api.New newRouter")
+	defer log.Debug().Msg("api.newRouter")
 
 	r := gin.Default()
 
 	user := r.Group("/api/user")
 	{
 		auth := user.Group("/")
-		{
-			auth.POST("register", a.signUpHandler)
-			auth.POST("login", a.signInHandler)
-		}
+		auth.POST("register", a.signUpHandler)
+		auth.POST("login", a.signInHandler)
 
 		orders := user.Group("/").Use(a.checkAuthMiddleware)
-		{
-			orders.POST("orders", a.setOrderHandler)
-			orders.GET("orders", a.ordersHandler)
-		}
+		orders.POST("orders", a.setOrderHandler)
+		orders.GET("orders", a.ordersHandler)
 
 		balance := user.Group("/balance").Use(a.checkAuthMiddleware)
-		{
-			balance.GET("/", a.balanceHandler)
-			balance.POST("/withdraw", a.withdrawPointsHandler)
-		}
+		balance.GET("/", a.balanceHandler)
+		balance.POST("/withdraw", a.withdrawPointsHandler)
 
 		withdraw := user.Group("/").Use(a.checkAuthMiddleware)
-		{
-			withdraw.GET("/withdrawals", a.withdrawnPointsHandler)
-		}
-
+		withdraw.GET("/withdrawals", a.withdrawnPointsHandler)
 	}
 
 	return r
@@ -111,12 +109,12 @@ func (a *API) Run() {
 
 	<-shutdown
 	if err := a.app.CloseStorage(); err != nil {
-		log.Err(err).Msg("storage closing")
+		log.Error().Err(err).Msg("storage closing")
 	} else {
 		log.Info().Msg("storage closed")
 	}
 	if err := a.serv.Shutdown(context.Background()); err != nil {
-		log.Err(err).Msg("HTTP server shutdown")
+		log.Error().Err(err).Msg("HTTP server shutdown")
 	} else {
 		log.Info().Msg("HTTP server gracefully shutdown")
 	}
@@ -139,8 +137,13 @@ func (a *API) startListener(ctx context.Context, shutdown chan os.Signal) (err e
 				close(shutdown)
 			}
 		default:
-			defer a.serv.Close()
-			log.Info().Str("addr", a.serv.Addr).Msg("starting http server")
+			defer func() {
+				if errServClose := a.serv.Close(); errServClose != nil {
+					log.Error().Err(errServClose).Msg("closing server")
+				}
+			}()
+
+			log.Info().Str("address", a.serv.Addr).Msg("starting http server")
 			err = a.serv.ListenAndServe()
 			ended <- struct{}{}
 		}

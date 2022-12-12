@@ -1,0 +1,39 @@
+name: go
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - authHandlers
+      - orderHandlers
+      - balanceHandlers
+      - review-branch
+      - refactoring
+  pull_request:
+    branches:
+      - main
+      - master
+      - authHandlers
+      - orderHandlers
+      - balanceHandlers
+      - review-branch
+      - refactoring
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.19
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...

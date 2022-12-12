@@ -5,14 +5,12 @@ import (
 )
 
 type Config struct {
-	servAPIAddr  string
-	pgConnString string
-
+	servAPIAddr               string
+	pgConnString              string
 	accrualAPIAddr            string
 	accrualGetOrder           string
+	logLevel                  string
 	orderStatusUpdateInterval time.Duration
-
-	logLevel string
 }
 
 func New(options ...string) (newCfg *Config, err error) {

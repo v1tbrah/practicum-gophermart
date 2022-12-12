@@ -12,7 +12,7 @@ import (
 
 var ErrInsufficientFunds = errors.New("there are not enough funds in the account")
 
-func (a *App) GetBalance(c context.Context, userID int64) (balance float64, withdrawn float64, err error) {
+func (a *App) GetBalance(c context.Context, userID int64) (balance, withdrawn float64, err error) {
 	log.Debug().Msg("app.GetBalance START")
 	defer func() {
 		logMethodEnd("app.GetBalance", err)

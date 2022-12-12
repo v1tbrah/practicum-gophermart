@@ -25,8 +25,8 @@ func (c *Config) parseFromEnv() (err error) {
 		ServAPIAddr               string        `env:"RUN_ADDRESS" toml:"RUN_ADDRESS"`
 		PgConnString              string        `env:"DATABASE_URI" toml:"DATABASE_URI"`
 		AccrualAPIAddr            string        `env:"ACCRUAL_SYSTEM_ADDRESS" toml:"ACCRUAL_SYSTEM_ADDRESS"`
-		OrderStatusUpdateInterval time.Duration `env:"ORDER_STATUS_UPDATE_INTERVAL" toml:"ORDER_STATUS_UPDATE_INTERVAL"`
 		LogLevel                  string        `env:"LOG_LEVEL" toml:"LOG_LEVEL"`
+		OrderStatusUpdateInterval time.Duration `env:"ORDER_STATUS_UPDATE_INTERVAL" toml:"ORDER_STATUS_UPDATE_INTERVAL"`
 	}{}
 
 	if err = env.Parse(&envConfig); err != nil {

@@ -62,7 +62,7 @@ func (a *App) GetOrdersByStatuses(statuses []string) (orders []model.Order, err 
 	return orders, nil
 }
 
-func (a *App) UpdateOrderStatuses(newOrderStatuses []model.Order) (err error) {
+func (a *App) UpdateOrders(newOrderStatuses []model.Order) (err error) {
 	log.Debug().Msg("app.UpdateOrderStatuses START")
 	defer func() {
 		logMethodEnd("app.UpdateOrderStatuses", err)

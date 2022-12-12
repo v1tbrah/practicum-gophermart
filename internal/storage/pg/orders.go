@@ -77,9 +77,8 @@ func (p *Pg) AddOrder(ctx context.Context, order *model.Order) error {
 			}
 			if order.UserID == existingOrder.UserID {
 				return fmt.Errorf(`pg: %w: %s`, dberr.ErrOrderWasUploadedByCurrentUser, err)
-			} else {
-				return fmt.Errorf(`pg: %w: %s`, dberr.ErrOrderWasUploadedByAnotherUser, err)
 			}
+			return fmt.Errorf(`pg: %w: %s`, dberr.ErrOrderWasUploadedByAnotherUser, err)
 		}
 		return fmt.Errorf(`pg: %w`, err)
 	}
@@ -100,14 +99,16 @@ func (p *Pg) GetOrdersByUser(ctx context.Context, userID int64) ([]model.Order, 
 
 	rows, err := p.ordersStmts.stmtGetUserOrders.QueryContext(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf(`pg: %w`, err)
+		return nil, fmt.Errorf("pg: %w", err)
 	}
 	defer rows.Close()
 
 	var orders []model.Order
 	for rows.Next() {
 		currOrder := model.Order{}
-		rows.Scan(&currOrder.UserID, &currOrder.Number, &currOrder.Status, &currOrder.Accrual, &currOrder.UploadedAt)
+		if err = rows.Scan(&currOrder.UserID, &currOrder.Number, &currOrder.Status, &currOrder.Accrual, &currOrder.UploadedAt); err != nil {
+			return nil, fmt.Errorf("pg: %w", err)
+		}
 		orders = append(orders, currOrder)
 	}
 
@@ -143,9 +144,8 @@ func (p *Pg) GetOrder(ctx context.Context, number string) (*model.Order, error) 
 	return &order, nil
 }
 
-func (p *Pg) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
+func (p *Pg) GetOrdersByStatuses(statuses []string) (orders []model.Order, err error) {
 	log.Debug().Msg("Pg.GetOrdersByStatuses START")
-	var err error
 	defer func() {
 		if err != nil {
 			log.Error().Err(err).Msg("Pg.GetOrdersByStatuses END")
@@ -160,10 +160,11 @@ func (p *Pg) GetOrdersByStatuses(statuses []string) ([]model.Order, error) {
 	}
 	defer rows.Close()
 
-	orders := []model.Order{}
 	for rows.Next() {
 		currOrder := model.Order{}
-		rows.Scan(&currOrder.UserID, &currOrder.Number, &currOrder.Status, &currOrder.Accrual, &currOrder.UploadedAt)
+		if err = rows.Scan(&currOrder.UserID, &currOrder.Number, &currOrder.Status, &currOrder.Accrual, &currOrder.UploadedAt); err != nil {
+			return nil, err
+		}
 		orders = append(orders, currOrder)
 	}
 
@@ -189,7 +190,11 @@ func (p *Pg) UpdateOrderStatuses(newOrderStatuses []model.Order) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if errTxRollback := tx.Rollback(); errTxRollback != nil {
+			log.Error().Err(errTxRollback).Msg("tx rollback")
+		}
+	}()
 
 	for _, order := range newOrderStatuses {
 		if _, err = tx.Stmt(p.ordersStmts.stmtUpdateOrderStatus).Exec(order.Status, order.Accrual, order.Number); err != nil {

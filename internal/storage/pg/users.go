@@ -58,7 +58,11 @@ func (p *Pg) AddUser(ctx context.Context, user *model.User) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if errTxRollback := tx.Rollback(); errTxRollback != nil {
+			log.Error().Err(errTxRollback).Msg("tx rollback")
+		}
+	}()
 
 	var id int64
 	err = tx.StmtContext(ctx, p.usersStmts.stmtAddUser).QueryRowContext(ctx, user.Login, user.Password).Scan(&id)

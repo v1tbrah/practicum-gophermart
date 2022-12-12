@@ -1,0 +1,64 @@
+run:
+  skip-files:
+    - "(_test.go)$"
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - gocyclo
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nolintlint
+    - nakedret
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
+    - stylecheck
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+    match-constant: true
+  gocritic:
+    disabled-checks:
+      - sloppyReassign
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+  gosec:
+    excludes:
+      - G101
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+
+
